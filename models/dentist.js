@@ -53,8 +53,9 @@ const DentistSchema = mongoose.Schema({
     required: true,
     validate: {
       validator: function (v) {
-        let passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\/d@$!%*?&]{8,}/;
-        return passRegex.test(v);
+        const pass = bcrypt.decodeBase64(v, 9)
+        let passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}/;
+        return passRegex.test(pass);
       },
       message: "Provided password is invalid.",
     },

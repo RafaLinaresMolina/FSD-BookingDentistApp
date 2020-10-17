@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require('bcryptjs');
 
 const UserSchema = mongoose.Schema({
   token: {
@@ -30,8 +31,9 @@ const UserSchema = mongoose.Schema({
     required: true,
     validate: {
       validator: function (v) {
+        const pass = bcrypt.decodeBase64(v, 9)
         let passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}/;
-        return passRegex.test(v);
+        return passRegex.test(pass);
       },
       message: "Provided password is invalid.",
     },
