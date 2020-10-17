@@ -1,21 +1,13 @@
 const mongoose = require("mongoose");
 
-const AdminSchema = mongoose.Schema({
+const UserSchema = mongoose.Schema({
   token: {
     type: String,
     default: "",
   },
   rollId: {
     type: Number,
-    default: 0,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
+    default: 1,
   },
   email: {
     type: String,
@@ -28,10 +20,6 @@ const AdminSchema = mongoose.Schema({
       },
       message: "Provided email is invalid.",
     },
-  },
-  address: {
-    type: String,
-    required: false,
   },
   createdAt: {
     type: Date,
@@ -60,6 +48,6 @@ const AdminSchema = mongoose.Schema({
   },
 });
 
-const AdminModel = mongoose.model("Admin", AdminSchema, "Users");
+const UserModel = mongoose.model("Client", UserSchema, "Users");
 
-module.exports = AdminModel;
+module.exports = UserModel;
