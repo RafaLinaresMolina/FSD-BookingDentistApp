@@ -62,7 +62,6 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
   try {
     process.log.debug(" -> userController.logout");
-    process.log.data(req.body);
 
     if(!req.headers.authorization){
       process.log.warning(`Token not present in headers`);
@@ -90,4 +89,5 @@ const logout = async (req, res) => {
 module.exports = {
   register,
   login,
+  logout,
 };
