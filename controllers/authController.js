@@ -8,7 +8,7 @@ const register = async (req, res) => {
   try {
     process.log.debug(" -> userController.register");
     process.log.data(req.body);
-    const Client = mongoose.model("Clients", ClientModel.schema, "Users");
+    const Client = mongoose.model("Clients", ClientModel.schema, ClientModel.collection);
     const clientDoc = new Client(req.body);
     clientDoc.password = await bcrypt.hash(clientDoc.password, 9);
     await clientDoc.save();
