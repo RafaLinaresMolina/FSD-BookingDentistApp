@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 const UserModel = require("../models/user");
 
-const User = UserModel.s
-
 const error403 = `I’m sorry. I know who you are–I believe who you say you are–but you just don’t have permission to access this resource.`;
 const error401 = `I don't know who you are or what you want, go away please.`;
 
@@ -16,7 +14,7 @@ const auth = {
       const token = req.headers.authorization.split(" ")[1];
       jwt.verify(token, process.env.SECRET_AUTH_JWT);
 
-      const user = await UserModel.findOne({token: token});
+      const user = await UserModel.findOne({token: token, status: {$ne: 0}});
       if (!user) {
         return res.status(401).send({ message: error401 });
       }
