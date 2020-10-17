@@ -1,32 +1,14 @@
 const mongoose = require("mongoose");
+const bcrypt = require('bcryptjs');
 
-const DentistSchema = mongoose.Schema({
+const UserSchema = mongoose.Schema({
   token: {
     type: String,
     default: "",
   },
   rollId: {
     type: Number,
-    default: 2,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-  },
-  number: {
-    type: Number,
-    required: true,
-    validate: {
-      validator: function (v) {
-        let emailRegex = /^\d{8}$/;
-        return emailRegex.test(v);
-      },
-      message: "Provided number of dentist is invalid.",
-    },
+    default: 1,
   },
   email: {
     type: String,
@@ -39,10 +21,6 @@ const DentistSchema = mongoose.Schema({
       },
       message: "Provided email is invalid.",
     },
-  },
-  address: {
-    type: String,
-    required: false,
   },
   createdAt: {
     type: Date,
@@ -72,6 +50,6 @@ const DentistSchema = mongoose.Schema({
   },
 });
 
-const ClientModel = mongoose.model("Dentist", DentistSchema, "Users");
+const UserModel = mongoose.model("Client", UserSchema, "Users");
 
-module.exports = ClientModel;
+module.exports = UserModel;
