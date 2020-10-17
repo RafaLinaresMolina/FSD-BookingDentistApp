@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require('bcryptjs');
 
-
 const DentistSchema = mongoose.Schema({
   token: {
     type: String,
