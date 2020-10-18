@@ -53,42 +53,42 @@ Appointments collections: contains all the info for the appointments between Cli
 
 We have this prefixes:
   - /Clients: for actions that can manage the clients
-    - post /appointment [logged]
-    - delete /appointment [logged]
-    - put /account [logged]
-    - delete /account [logged]
-    - get /appointments [logged]
-    - get /appointmentsbetweenDates [logged]
+    - post /appointment [logged] -> Client create an appointment with 'pending' status
+    - delete /appointment [logged] -> Client cancell the appointment
+    - put /account [logged] -> Client modify the account data.
+    - delete /account [logged] -> Client deactivate the account. Also cancel all the appointments without status 'done'
+    - get /appointments [logged] -> Client visualize all of his appointments.
+    - get /appointmentsbetweenDates [logged] -> Client visualize all of his appointments between the given dates.
 
 
   - /Dentist: for actions that can manage the Dentists
-    - post /appointment [logged, mustBeDentist]
-    - put /appointment [logged, mustBeDentist]
-    - put /appointment/cancel [logged, mustBeDentist]
-    - put /appointment/confirm [logged, mustBeDentist]
-    - put /appointment/done [logged, mustBeDentist]
-    - delete /appointment [logged, mustBeDentist]
-    - put /account [logged, mustBeDentist]
-    - delete /account [logged, mustBeDentist]
-    - get /appointments [logged, mustBeDentist]
-    - get /appointments/user [logged, mustBeDentist]
-    - get /appointmentsbetweenDates [logged, mustBeDentist]
+    - post /appointment [logged, mustBeDentist] -> Dentist create an appointment for a Client
+    - put /appointment [logged, mustBeDentist] -> Dentist modify the info on the appointment
+    - put /appointment/cancel [logged, mustBeDentist] -> Dentist Cancel the appointment
+    - put /appointment/confirm [logged, mustBeDentist] -> Dentist Confirm an appointment
+    - put /appointment/done [logged, mustBeDentist] -> Dentist end an appointment
+    - delete /appointment [logged, mustBeDentist] -> Dentist Cancel the appointment
+    - put /account [logged, mustBeDentist] -> Dentist edits his account
+    - delete /account [logged, mustBeDentist] -> Dentist deactivate his account. Also cancell all of his appointments without status 'done'
+    - get /appointments [logged, mustBeDentist] -> Dentist visualize all of his appointments
+    - get /appointments/user [logged, mustBeDentist] -> Dentist visualize all the appointments from a Client
+    - get /appointmentsbetweenDates [logged, mustBeDentist] -> Dentist visualize all of his appointments between the given dates.
 
   - /Admin: for actions that can manage the Admins
-    - post /appointment [logged, mustBeAdmin]
-    - delete /appointment [logged, mustBeAdmin]
-    - put /appointment [logged, mustBeAdmin]
-    - put /appointment/confirm [logged, mustBeAdmin]
-    - put /appointment/done [logged, mustBeAdmin]
-    - put /account [logged, mustBeAdmin]
-    - put /account/user [logged, mustBeAdmin]
-    - delete /account [logged, mustBeAdmin]
-    - put /roles/client [logged, mustBeAdmin]
-    - put /roles/dentist [logged, mustBeAdmin]
-    - put /roles/admin [logged, mustBeAdmin]
-    - get /appointments/dentist [logged, mustBeAdmin]
-    - get /appointments/Client [logged, mustBeAdmin]
-    - get /appointmentsbetweenDates [logged, mustBeAdmin]
+    - post /appointment [logged, mustBeAdmin] -> Admin create an appointment between a Dentist and a Client
+    - delete /appointment [logged, mustBeAdmin] -> Admin cancel an appointment
+    - put /appointment [logged, mustBeAdmin] -> Admin edit the appointment data
+    - put /appointment/confirm [logged, mustBeAdmin] -> Admin confirm an appointment
+    - put /appointment/done [logged, mustBeAdmin] -> Admin end and appointment
+    - put /account [logged, mustBeAdmin] -> Admin edit his account
+    - put /account/user [logged, mustBeAdmin] -> Admin edit other user account info
+    - delete /account [logged, mustBeAdmin] -> Admin deactivate his account
+    - put /roles/client [logged, mustBeAdmin] -> Admin change the given user role to Client
+    - put /roles/dentist [logged, mustBeAdmin] -> Admin change the given user role to Dentist
+    - put /roles/admin [logged, mustBeAdmin] -> Admin change the given user role to Admin
+    - get /appointments/dentist [logged, mustBeAdmin] -> Admin visualize all the Dentist's appointments
+    - get /appointments/Client [logged, mustBeAdmin] -> Admin visualize all the Clients's appointments
+    - get /appointmentsbetweenDates [logged, mustBeAdmin] -> Admin visualize all of his appointments between the given dates.
 
 
 ### Things i will add
