@@ -17,6 +17,8 @@ const {
   watchHistoryOfDentistAppointments,
   watchHistoryOfClientAppointments,
   watchHistoryOfAppointmentsBetweenDates,
+
+  usersLogged
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -37,5 +39,7 @@ router.put("/roles/admin", auth.loggedRequired, auth.adminRequired, changeRoleTo
 router.post("/appointments/dentist", auth.loggedRequired, auth.adminRequired, watchHistoryOfDentistAppointments);
 router.post("/appointments/client", auth.loggedRequired, auth.adminRequired, watchHistoryOfClientAppointments);
 router.post("/appointmentsbetweenDates", auth.loggedRequired, auth.adminRequired, watchHistoryOfAppointmentsBetweenDates);
+
+router.get("/users/logged", auth.loggedRequired, auth.adminRequired, usersLogged);
 
 module.exports = router;
