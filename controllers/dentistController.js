@@ -2,12 +2,7 @@ const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
 const dentistModel = require("../models/dentist");
-const {
-  isDateAlreadyTaken,
-  isMorningShift,
-  isNightShift,
-  isWeekend,
-} = require("../lib/tools");
+const tools = require("../lib/tools");
 
 const createAppointment = async (req, res) => {
   try {
@@ -19,16 +14,19 @@ const createAppointment = async (req, res) => {
       "Appointments"
     );
 
+    if(req.body.ClientId)
+    await tools.userFound(req.body.ClientId);
+    
     const newAppointment = req.body;
     newAppointment.DentistId = req.user._id;
     newAppointment.status = 2;
 
     const appointmentDoc = new Appointment(newAppointment);
 
-    await isDateAlreadyTaken(appointmentDoc.date);
-    isMorningShift(appointmentDoc.date);
-    isNightShift(appointmentDoc.date);
-    isWeekend(appointmentDoc.date);
+    await tools.isDateAlreadyTaken(appointmentDoc.date);
+    tools.isMorningShift(appointmentDoc.date);
+    tools.isNightShift(appointmentDoc.date);
+    tools.isWeekend(appointmentDoc.date);
 
     await appointmentDoc.save();
     res.send(appointmentDoc);
@@ -48,14 +46,11 @@ const modifyAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.modifyAppointment");
     process.log.data(req.body);
-    const Appointment = await mongoose.model(
-      "Appointments",
-      AppointmentModel.schema,
-      "Appointments"
-    );
 
-    const appointmentDoc = await AppointmentModel.findOneAndUpdate({
-      _id: req.body._id,
+    if(req.body.ClientId)
+    await tools.userFound(req.body.ClientId);
+
+    await AppointmentModel.findByIdAndUpdate(req.body._id, {
       DentistId: req.user._id,
     }, req.body.appointment, (err, appointmentDoc) => {
       if(err){
@@ -83,8 +78,8 @@ const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.cancelAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
+    
+    const appointmentDoc = await AppointmentModel.findById(req.body._id, {
       DentistId: req.user._id,
     });
     if (!appointmentDoc) {
@@ -112,8 +107,7 @@ const acceptAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.acceptAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
+    const appointmentDoc = await AppointmentModel.findById( req.body._id, {
       DentistId: req.user._id,
     });
     if (!appointmentDoc) {
@@ -141,8 +135,7 @@ const endAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.endAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
+    const appointmentDoc = await AppointmentModel.findById( req.body._id, {
       DentistId: req.user._id,
     });
     if (!appointmentDoc) {
@@ -314,6 +307,7 @@ module.exports = {
   endAppointment,
   modifyAccountData,
   deactivateAcount,
+  modifyAppointment,
   watchHistoryOfAppointments,
   watchHistoryOfAppointmentsFromPatient,
   watchHistoryOfAppointmentsBetweenDates,
