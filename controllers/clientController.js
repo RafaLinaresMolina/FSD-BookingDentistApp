@@ -141,7 +141,7 @@ const deactivateAcount = async (req, res) => {
     process.log.data(req.body);
     await userModel.findByIdAndUpdate(
       req.user._id,
-      { status: 0, token: null },
+      { status: 0, token: "" },
       async (err, updatedDoc) => {
         if (err) {
           process.log.warning(
