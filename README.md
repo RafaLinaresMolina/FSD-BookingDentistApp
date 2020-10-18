@@ -52,16 +52,16 @@ Appointments collections: contains all the info for the appointments between Cli
 ## The endpoints
 
 We have this prefixes:
-  - /Clients: for actions that can manage the clients
+  - /clients: for actions that can manage the clients
     - post /appointment [logged] -> Client create an appointment with 'pending' status
     - delete /appointment [logged] -> Client cancell the appointment
     - put /account [logged] -> Client modify the account data.
     - delete /account [logged] -> Client deactivate the account. Also cancel all the appointments without status 'done'
     - get /appointments [logged] -> Client visualize all of his appointments.
-    - get /appointmentsbetweenDates [logged] -> Client visualize all of his appointments between the given dates.
+    - post /appointmentsbetweenDates [logged] -> Client visualize all of his appointments between the given dates.
 
 
-  - /Dentist: for actions that can manage the Dentists
+  - /dentist: for actions that can manage the Dentists
     - post /appointment [logged, mustBeDentist] -> Dentist create an appointment for a Client
     - put /appointment [logged, mustBeDentist] -> Dentist modify the info on the appointment
     - put /appointment/cancel [logged, mustBeDentist] -> Dentist Cancel the appointment
@@ -71,10 +71,10 @@ We have this prefixes:
     - put /account [logged, mustBeDentist] -> Dentist edits his account
     - delete /account [logged, mustBeDentist] -> Dentist deactivate his account. Also cancell all of his appointments without status 'done'
     - get /appointments [logged, mustBeDentist] -> Dentist visualize all of his appointments
-    - get /appointments/user [logged, mustBeDentist] -> Dentist visualize all the appointments from a Client
-    - get /appointmentsbetweenDates [logged, mustBeDentist] -> Dentist visualize all of his appointments between the given dates.
+    - post /appointments/user [logged, mustBeDentist] -> Dentist visualize all the appointments from a Client
+    - post /appointmentsbetweenDates [logged, mustBeDentist] -> Dentist visualize all of his appointments between the given dates.
 
-  - /Admin: for actions that can manage the Admins
+  - /admin: for actions that can manage the Admins
     - post /appointment [logged, mustBeAdmin] -> Admin create an appointment between a Dentist and a Client
     - delete /appointment [logged, mustBeAdmin] -> Admin cancel an appointment
     - put /appointment [logged, mustBeAdmin] -> Admin edit the appointment data
@@ -86,9 +86,10 @@ We have this prefixes:
     - put /roles/client [logged, mustBeAdmin] -> Admin change the given user role to Client
     - put /roles/dentist [logged, mustBeAdmin] -> Admin change the given user role to Dentist
     - put /roles/admin [logged, mustBeAdmin] -> Admin change the given user role to Admin
-    - get /appointments/dentist [logged, mustBeAdmin] -> Admin visualize all the Dentist's appointments
-    - get /appointments/Client [logged, mustBeAdmin] -> Admin visualize all the Clients's appointments
-    - get /appointmentsbetweenDates [logged, mustBeAdmin] -> Admin visualize all of his appointments between the given dates.
+    - post /appointments/dentist [logged, mustBeAdmin] -> Admin visualize all the Dentist's appointments
+    - post /appointments/client [logged, mustBeAdmin] -> Admin visualize all the Clients's appointments
+    - post /appointmentsbetweenDates [logged, mustBeAdmin] -> Admin visualize all of his appointments between the given dates.
+    - get /users/logged [logged, mustBeAdmin] -> Admin visualize all the logged users.
 
 
 ### Things i will add
