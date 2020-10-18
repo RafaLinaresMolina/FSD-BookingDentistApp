@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
-const userModel = require("../models/user");
 const tools = require("../lib/tools");
 const UserModel = require("../models/user");
 
@@ -418,6 +417,7 @@ const usersLogged = async (req, res) => {
       );
       return res.status(400).send({ message: `appointment not found` });
     }
+    process.log.data(appointmentDoc)
     res.send(appointmentDoc);
     process.log.debug(" <- adminController.usersLogged");
   } catch (err) {

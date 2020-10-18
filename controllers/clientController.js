@@ -8,6 +8,7 @@ const {
   isNightShift,
   isWeekend,
 } = require("../lib/tools");
+const tools = require('../lib/tools');
 
 const createAppointment = async (req, res) => {
   try {
@@ -100,6 +101,8 @@ const modifyAccountData = async (req, res) => {
 };
 
 const watchHistoryOfAppointments = async (req, res) => {
+  process.log.debug(" -> clientController.watchHistoryOfAppointments");
+
   const appointmentDocs = await AppointmentModel.find({
     ClientId: req.user._id,
   });
@@ -111,8 +114,12 @@ const watchHistoryOfAppointments = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
+
+  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
+  appointmentWithClients = await Promise.all(appointmentWithClients)
   process.log.debug(" <- clientController.watchHistoryOfAppointments");
-  res.send(appointmentDocs);
+  res.send(appointmentWithClients);
 };
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
@@ -131,8 +138,12 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
+
+  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
+  appointmentWithClients = await Promise.all(appointmentWithClients)
   process.log.debug(" <- clientController.watchHistoryOfAppointments");
-  res.send(appointmentDocs);
+  res.send(appointmentWithClients);
 };
 
 const deactivateAcount = async (req, res) => {

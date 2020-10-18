@@ -207,8 +207,11 @@ const watchHistoryOfAppointments = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
+  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
+  appointmentWithClients = await Promise.all(appointmentWithClients)
   process.log.debug(" <- dentistController.watchHistoryOfAppointments");
-  res.send(appointmentDocs);
+  res.send(appointmentWithClients);
 };
 
 const watchHistoryOfAppointmentsFromPatient = async (req, res) => {
@@ -227,10 +230,14 @@ const watchHistoryOfAppointmentsFromPatient = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
+
+  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
+  appointmentWithClients = await Promise.all(appointmentWithClients)
   process.log.debug(
     " <- dentistController.watchHistoryOfAppointmentsFromPatient"
   );
-  res.send(appointmentDocs);
+  res.send(appointmentWithClients);
 };
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
@@ -253,10 +260,14 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
+
+  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
+  appointmentWithClients = await Promise.all(appointmentWithClients)
   process.log.debug(
     " <- dentistController.watchHistoryOfAppointmentsBetweenDates"
   );
-  res.send(appointmentDocs);
+  res.send(appointmentWithClients);
 };
 
 const deactivateAcount = async (req, res) => {
