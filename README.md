@@ -38,7 +38,7 @@ Appointments collections: contains all the info for the appointments between Cli
   - MONGO_DB: The DAtaBase name
   - PORT: The port for express
   - MINIMUM_LEVEL_LOG: Log has 5 levels: Error, Warning, Debug, Info, Data. Setting this limits the levels showed.
-    ![Log example](./log.png)
+    ![Log example](./log_img.png)
     - Error: display the message in red, level 0: used for display message from crashes.
     - Warning: display the message in orange, level 1: used for minor mistakes (like search an user by a wrong id and return empty resource)
     - Debug: display the message in blue, level 2: used for keep the executing flow.
