@@ -14,8 +14,9 @@ const createAppointment = async (req, res) => {
       "Appointments"
     );
 
+    if(req.body.ClientId)
     await tools.userFound(req.body.ClientId);
-
+    
     const newAppointment = req.body;
     newAppointment.DentistId = req.user._id;
     newAppointment.status = 2;
@@ -46,6 +47,9 @@ const modifyAppointment = async (req, res) => {
     process.log.debug(" -> dentistController.modifyAppointment");
     process.log.data(req.body);
 
+    if(req.body.ClientId)
+    await tools.userFound(req.body.ClientId);
+
     await AppointmentModel.findByIdAndUpdate(req.body._id, {
       DentistId: req.user._id,
     }, req.body.appointment, (err, appointmentDoc) => {
@@ -74,6 +78,7 @@ const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.cancelAppointment");
     process.log.data(req.body);
+    
     const appointmentDoc = await AppointmentModel.findById(req.body._id, {
       DentistId: req.user._id,
     });
