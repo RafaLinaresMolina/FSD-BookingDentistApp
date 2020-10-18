@@ -6,7 +6,7 @@ const DentistSchema = mongoose.Schema({
     type: String,
     default: "",
   },
-  rollId: {
+  roleId: {
     type: Number,
     default: 2,
   },
