@@ -28,7 +28,7 @@ const auth = {
   
   async adminRequired(req, res, next) {
     try {
-      if ([0].includes(req.user.rollId)) {
+      if ([0].includes(req.user.roleId)) {
         return res.status(403).send({ message: error403 });
       }
       next();
@@ -40,7 +40,7 @@ const auth = {
 
   async dentistRequired(req, res, next) {
     try {
-      if ([0, 2].includes(req.user.rollId)) {
+      if ([0, 2].includes(req.user.roleId)) {
         return res.status(403).send({ message: error403 });
       }
       next();
