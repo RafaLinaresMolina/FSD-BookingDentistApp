@@ -49,7 +49,7 @@ const login = async (req, res) => {
     const user = await UserModel.findOne({ email: req.body.email, status: 1 });
     if (!user) {
       process.log.warning(` <- authController.login: Wrong credentials!`);
-      return res.status(401).message({ message: "Wrong credentials!" });
+      return res.status(401).send({ message: "Wrong credentials!" });
     }
 
     await isValidPassword(req.body.password, user.toJSON().password);
