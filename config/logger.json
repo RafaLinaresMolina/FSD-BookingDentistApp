@@ -11,7 +11,7 @@
     "nodeFontColor": "PREFIX[33mPREFIX[5m"
   },
   "2": {
-    "frontStyle": "color: orange; font-weight: bold;",
+    "frontStyle": "color: blue; font-weight: bold;",
     "header": "[ ##DATE## ] # DEBUG: ",
     "nodeFontColor": "PREFIX[36m"
   },
