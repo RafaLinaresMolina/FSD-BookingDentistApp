@@ -44,8 +44,7 @@ const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> clientController.cancelAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
+    const appointmentDoc = await AppointmentModel.findById(req.body._id, {
       ClientId: req.user._id,
     });
     if (!appointmentDoc) {
