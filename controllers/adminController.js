@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
 const tools = require("../lib/tools");
+const UserModel = require("../models/user");
 
 const createAppointment = async (req, res) => {
   try {
@@ -51,7 +52,7 @@ const modifyAppointment = async (req, res) => {
         ClientId: req.body.ClientId,
         DentistId: req.user.DentistId,
       },
-      req.body.appointment,
+      req.body,
       (err, appointmentDoc) => {
         if (err) {
           process.log.warning(
@@ -257,7 +258,7 @@ const changeRoleToAdmin = async (req, res) => {
     process.log.data(req.body);
     await AppointmentModel.findByIdAndUpdate(
       req.user._id,
-      { roleId: 0, token: null },
+      { roleId: 0, token: "" },
       (err, updatedDoc) => {
         if (err) {
           process.log.warning(
@@ -288,7 +289,7 @@ const changeRoleToClient = async (req, res) => {
     process.log.data(req.body);
     await AppointmentModel.findByIdAndUpdate(
       req.user._id,
-      { roleId: 1, token: null },
+      { roleId: 1, token: "" },
       (err, updatedDoc) => {
         if (err) {
           process.log.warning(
@@ -381,7 +382,7 @@ const deactivateAcount = async (req, res) => {
     process.log.data(req.body);
     await userModel.findByIdAndUpdate(
       req.user._id,
-      { status: 0, token: null },
+      { status: 0, token: "" },
       async (err, updatedDoc) => {
         if (err) {
           process.log.warning(
@@ -407,6 +408,29 @@ const deactivateAcount = async (req, res) => {
   }
 };
 
+const usersLogged = async (req, res) => {
+  try {
+    process.log.debug(" -> adminController.usersLogged");
+    const appointmentDoc = await UserModel.find({token: { $ne: ""}});
+    if (!appointmentDoc) {
+      process.log.warning(
+        " <- adminController.usersLogged: no one is logged"
+      );
+      return res.status(400).send({ message: `appointment not found` });
+    }
+    res.send(appointmentDoc);
+    process.log.debug(" <- adminController.usersLogged");
+  } catch (err) {
+    process.log.error(
+      ` x- adminController.usersLogged ERROR: ${err.message}`
+    );
+    res.status(500).send({
+      message: "Error on adminController.usersLogged",
+      trace: err.message,
+    });
+  }
+}
+
 module.exports = {
   createAppointment,
   cancelAppointment,
@@ -425,4 +449,6 @@ module.exports = {
   watchHistoryOfDentistAppointments,
   watchHistoryOfClientAppointments,
   watchHistoryOfAppointmentsBetweenDates,
+
+  usersLogged
 };

@@ -14,9 +14,8 @@ const createAppointment = async (req, res) => {
       "Appointments"
     );
 
-    if(req.body.ClientId)
-    await tools.userFound(req.body.ClientId);
-    
+    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
+
     const newAppointment = req.body;
     newAppointment.DentistId = req.user._id;
     newAppointment.status = 2;
@@ -47,22 +46,22 @@ const modifyAppointment = async (req, res) => {
     process.log.debug(" -> dentistController.modifyAppointment");
     process.log.data(req.body);
 
-    if(req.body.ClientId)
-    await tools.userFound(req.body.ClientId);
+    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
 
-    await AppointmentModel.findByIdAndUpdate(req.body._id, {
-      DentistId: req.user._id,
-    }, req.body.appointment, (err, appointmentDoc) => {
-      if(err){
-        process.log.warning(
-          " <- dentistController.modifyAppointment: appointment not found"
-        );
-        return res.status(400).send({message: 'appointment not found'})
+    await AppointmentModel.findOneAndUpdate(
+      { _id: req.body._id, DentistId: req.user._id },
+      req.body,
+      (err, appointmentDoc) => {
+        if (err) {
+          process.log.warning(
+            " <- dentistController.modifyAppointment: appointment not found"
+          );
+          return res.status(400).send({ message: "appointment not found" });
+        }
+
+        res.send({ message: "appointment updated", appointmentDoc });
       }
-
-      res.send({message: 'appointment updated'})
-    });
-
+    );
   } catch (err) {
     process.log.error(
       ` x- dentistController.modifyAppointment ERROR: ${err.message}`
@@ -78,8 +77,9 @@ const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.cancelAppointment");
     process.log.data(req.body);
-    
-    const appointmentDoc = await AppointmentModel.findById(req.body._id, {
+
+    const appointmentDoc = await AppointmentModel.findOne({
+      _id: req.body._id,
       DentistId: req.user._id,
     });
     if (!appointmentDoc) {
@@ -88,9 +88,10 @@ const cancelAppointment = async (req, res) => {
       );
       return res.status(400).send({ message: `appointment not found` });
     }
+    process.log.data(appointmentDoc);
     appointmentDoc.status = 0;
     await appointmentDoc.save();
-    res.send({ message: `${appointmentDoc.title} is cancelled.` });
+    res.send({ message: ` '${appointmentDoc.title}' is cancelled.` });
     process.log.debug(" <- dentistController.cancelAppointment");
   } catch (err) {
     process.log.error(
@@ -107,7 +108,8 @@ const acceptAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.acceptAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findById( req.body._id, {
+    const appointmentDoc = await AppointmentModel.findOne({
+      _id: req.body._id,
       DentistId: req.user._id,
     });
     if (!appointmentDoc) {
@@ -116,9 +118,10 @@ const acceptAppointment = async (req, res) => {
       );
       return res.status(400).send({ message: `appointment not found` });
     }
+    process.log.data(appointmentDoc);
     appointmentDoc.status = 2;
     await appointmentDoc.save();
-    res.send({ message: `${appointmentDoc.title} is cancelled.` });
+    res.send({ message: `'${appointmentDoc.title}' is accepted.` });
     process.log.debug(" <- dentistController.acceptAppointment");
   } catch (err) {
     process.log.error(
@@ -135,7 +138,7 @@ const endAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.endAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findById( req.body._id, {
+    const appointmentDoc = await AppointmentModel.findById(req.body._id, {
       DentistId: req.user._id,
     });
     if (!appointmentDoc) {
@@ -209,10 +212,12 @@ const watchHistoryOfAppointments = async (req, res) => {
 };
 
 const watchHistoryOfAppointmentsFromPatient = async (req, res) => {
-  process.log.debug(" -> dentistController.watchHistoryOfAppointmentsFromPatient");
+  process.log.debug(
+    " -> dentistController.watchHistoryOfAppointmentsFromPatient"
+  );
 
   const appointmentDocs = await AppointmentModel.find({
-    ClientId: req.body._id,
+    ClientId: req.body.ClientId,
   });
   if (!appointmentDocs) {
     process.log.warning(
@@ -222,13 +227,17 @@ const watchHistoryOfAppointmentsFromPatient = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
-  process.log.debug(" <- dentistController.watchHistoryOfAppointmentsFromPatient");
+  process.log.debug(
+    " <- dentistController.watchHistoryOfAppointmentsFromPatient"
+  );
   res.send(appointmentDocs);
 };
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
-  process.log.debug(" -> dentistController.watchHistoryOfAppointmentsFromPatient");
-
+  process.log.debug(
+    " -> dentistController.watchHistoryOfAppointmentsFromPatient"
+  );
+  process.log.data(req.user._id);
   const appointmentDocs = await AppointmentModel.find({
     DentistId: req.user._id,
     date: {
@@ -244,7 +253,9 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
-  process.log.debug(" <- dentistController.watchHistoryOfAppointmentsBetweenDates");
+  process.log.debug(
+    " <- dentistController.watchHistoryOfAppointmentsBetweenDates"
+  );
   res.send(appointmentDocs);
 };
 
@@ -254,7 +265,7 @@ const deactivateAcount = async (req, res) => {
     process.log.data(req.body);
     await userModel.findByIdAndUpdate(
       req.user._id,
-      { status: 0, token: null },
+      { status: 0, token: "" },
       async (err, updatedDoc) => {
         if (err) {
           process.log.warning(

@@ -14,6 +14,6 @@ router.delete("/appointment", auth.loggedRequired, cancelAppointment);
 router.put("/account", auth.loggedRequired, modifyAccountData);
 router.delete("/account", auth.loggedRequired, deactivateAcount);
 router.get("/appointments", auth.loggedRequired, watchHistoryOfAppointments);
-router.get("/appointmentsbetweenDates", auth.loggedRequired, watchHistoryOfAppointmentsBetweenDates);
+router.post("/appointmentsbetweenDates", auth.loggedRequired, watchHistoryOfAppointmentsBetweenDates);
 
 module.exports = router;
