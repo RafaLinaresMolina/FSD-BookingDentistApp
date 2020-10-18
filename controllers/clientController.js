@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
+const ClientModel = require("../models/client");
 const {
   isDateAlreadyTaken,
   isMorningShift,
@@ -13,7 +14,7 @@ const createAppointment = async (req, res) => {
     process.log.debug(" -> clientController.createAppointment");
     process.log.data(req.body);
     const Appointment = await mongoose.model(
-      "Clients",
+      "Appointments",
       AppointmentModel.schema,
       "Appointments"
     );
@@ -72,7 +73,7 @@ const modifyAccountData = async (req, res) => {
   try {
     process.log.debug(" -> clientController.modifyAccountData");
     process.log.data(req.body);
-    await AppointmentModel.findByIdAndUpdate(
+    await ClientModel.findByIdAndUpdate(
       req.user._id,
       req.body,
       (err, updatedDoc) => {
