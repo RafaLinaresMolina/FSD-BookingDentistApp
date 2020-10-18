@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
+const bcrypt = require('bcryptjs');
 
 const ClientSchema = mongoose.Schema({
   token: {
     type: String,
     default: "",
 	},
-	rollId: {
+	roleId: {
     type: Number,
     default: 1,
   },
@@ -36,18 +37,6 @@ const ClientSchema = mongoose.Schema({
   createdAt: {
     type: Date,
     default: new Date(),
-  },
-  password: {
-    type: String,
-    required: true,
-    validate: {
-      validator: function (v) {
-        const pass = bcrypt.decodeBase64(v, 9)
-        let passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}/;
-        return passRegex.test(pass);
-      },
-      message: "Provided password is invalid.",
-    },
   },
 	covidPassed: {
 		type: Boolean,

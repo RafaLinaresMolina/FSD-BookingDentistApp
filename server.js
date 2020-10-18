@@ -4,7 +4,10 @@ const MongoConnection = require("./lib/MongoConnection");
 const app = express();
 const PORT = process.env.PORT || 5500;
 const Log = require("./lib/logger");
-const authControler = require('./routers/autRouter')
+const authControler = require('./routers/autRouter');
+const clientControler = require('./routers/clientRouter');
+const dentistController = require('./routers/dentistRouter');
+const adminController = require('./routers/adminRouter');
 
 /**
  * This function create the MongoConnection Object
@@ -36,6 +39,9 @@ const initLogger = async () => {
 const initExpress = () => {
   app.use(express.json());
   app.use('/auth',authControler);
+  app.use('/client',clientControler);
+  app.use('/dentist',dentistController);
+  app.use('/admin', adminController);
   app.listen(PORT, () => {
     Log.info(`Express running on port: ${PORT}`);
   });
