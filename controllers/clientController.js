@@ -1,7 +1,5 @@
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
-const tools = require("../lib/tools");
-const UserModel = require("../models/user");
 
 const createAppointment = async (req, res) => {
   try {
@@ -128,25 +126,10 @@ const deactivateAcount = async (req, res) => {
       return res.status(400).send({ message: `Unable to update your profile` });
     }
 
-    await AppointmentModel.updateMany(
-      { ClientId: req.user._id, status: { $ne: 3 } },
-      { $set: { status: 0 } },
-      { multi: true },
-      (err, updatedDocuments) => {
-        if (err) {
-          process.log.warning(
-            " <- clientController.modifyAccountData: Unable to deactivate your active appointments"
-          );
-          return res.status(400).send({
-            message: `Unable to deactivate your active appointments`,
-          });
-        }
-        process.log.debug(
-          " <- clientController.modifyAccountData: user active appointments status set to 0"
-        );
-        res.send({ message: `Account deactivated` });
-      }
-    );
+    await AppointmentModel.cancelAppointmentsOnCascade(req.user._id);
+
+    
+    res.send({ message: `Account deactivated` });
   } catch (err) {
     process.log.error(
       ` x- clientController.modifyAccountData ERROR: ${err.message}`
