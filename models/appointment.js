@@ -109,7 +109,26 @@ AppointmentSchema.statics.getAllAppointments = async function (userType, id) {
     const appointmentDocs = await this.find({ [userType + "Id"]: id });
     if (!appointmentDocs) {
       process.log.warning(
-        " <- AppointmentSchema.statics.watchHistoryOfAppointments: Unable to retrive the appointments"
+        " <- AppointmentSchema.statics.getAllAppointments: Unable to retrive the appointments"
+      );
+      return res
+        .status(400)
+        .send({ message: `Unable to retrive the appointments` });
+    }
+
+    return appointmentDocs;
+  } catch (err) {throw err;}
+};
+
+AppointmentSchema.statics.getAllAppointmentsBetweenDates = async function (userType, id, start, end) {
+  try {
+    const appointmentDocs = await this.find({ [userType + "Id"]: id, date: {
+      $gt: start,
+      $lt: end,
+    } });
+    if (!appointmentDocs) {
+      process.log.warning(
+        " <- AppointmentSchema.statics.getAllAppointmentsBetweenDates: Unable to retrive the appointments"
       );
       return res
         .status(400)

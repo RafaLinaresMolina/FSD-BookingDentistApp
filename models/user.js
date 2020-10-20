@@ -123,11 +123,24 @@ UserSchema.statics.update = async function(id, data){
   const userDocument = await UserModel.findOneAndUpdate({_id: id}, data).exec(); 
     if (!userDocument) {
       process.log.warning(
-        " <- UserSchema.statics.modifyAccountData: Unable to update your profile"
+        " <- UserSchema.statics.update: Unable to update your profile"
       );
       throw new Error(`Unable to update your profile`);
     }
-    process.log.debug(" <- UserSchema.statics.modifyAccountData");
+    process.log.debug(" <- UserSchema.statics.update");
+    return userDocument;
+  
+}
+
+UserSchema.statics.softDelete = async function(id){
+  const userDocument = await UserModel.findOneAndUpdate({_id: id}, {status: 0, token: ""}).exec(); 
+    if (!userDocument) {
+      process.log.warning(
+        " <- UserSchema.statics.softDelete: Unable to update your profile"
+      );
+      throw new Error(`Unable to update your profile`);
+    }
+    process.log.debug(" <- UserSchema.statics.softDelete");
     return userDocument;
   
 }
