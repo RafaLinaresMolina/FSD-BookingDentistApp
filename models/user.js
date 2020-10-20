@@ -119,6 +119,19 @@ UserSchema.methods.generateAuthToken = function () {
   return token;
 };
 
+UserSchema.statics.update = async function(id, data){
+  const userDocument = await UserModel.findOneAndUpdate({_id: id}, data).exec(); 
+    if (!userDocument) {
+      process.log.warning(
+        " <- UserSchema.statics.modifyAccountData: Unable to update your profile"
+      );
+      throw new Error(`Unable to update your profile`);
+    }
+    process.log.debug(" <- UserSchema.statics.modifyAccountData");
+    return userDocument;
+  
+}
+
 const UserModel = mongoose.model("User", UserSchema, "Users");
 
 module.exports = UserModel;
