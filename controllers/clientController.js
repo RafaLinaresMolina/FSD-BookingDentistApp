@@ -1,14 +1,17 @@
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
-const tools = require('../lib/tools');
+const tools = require("../lib/tools");
 const UserModel = require("../models/user");
 
 const createAppointment = async (req, res) => {
   try {
     process.log.debug(" -> clientController.createAppointment");
     process.log.data(req.body);
-  
-    const appointmentDoc = await AppointmentModel.createAppointment(req.body, req.user._id);
+
+    const appointmentDoc = await AppointmentModel.createAppointment(
+      req.body,
+      req.user._id
+    );
 
     res.send(appointmentDoc);
     process.log.debug(" <- clientController.createAppointment");
@@ -28,7 +31,9 @@ const cancelAppointment = async (req, res) => {
     process.log.debug(" -> clientController.cancelAppointment");
     process.log.data(req.body);
 
-    const appointmentDoc = await AppointmentModel.cancelAppointment(req.body._id);
+    const appointmentDoc = await AppointmentModel.cancelAppointment(
+      req.body._id
+    );
 
     res.send({ message: `${appointmentDoc.title} is cancelled.` });
     process.log.debug(" <- clientController.cancelAppointment");
@@ -64,13 +69,18 @@ const modifyAccountData = async (req, res) => {
 };
 
 const watchHistoryOfAppointments = async (req, res) => {
-  try{
+  try {
     process.log.debug(" -> clientController.watchHistoryOfAppointments");
-    const appointmentWithClients = await AppointmentModel.getAllAppointments('Client',req.user._id);
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      "Client",
+      req.user._id
+    );
     process.log.debug(" <- clientController.watchHistoryOfAppointments");
     res.send(appointmentWithClients);
-  }catch(err){
-    process.log.error(" x- clientController.watchHistoryOfAppointments Error:" + err.message);
+  } catch (err) {
+    process.log.error(
+      " x- clientController.watchHistoryOfAppointments Error:" + err.message
+    );
     res.status(400).send({
       message: "Error on clientController.watchHistoryOfAppointments",
       trace: err.message,
@@ -79,68 +89,62 @@ const watchHistoryOfAppointments = async (req, res) => {
 };
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
-  const appointmentDocs = await AppointmentModel.find({
-    ClientId: req.user._id,
-    date: {
-      $gt: req.body.start,
-      $lt: req.body.end,
-    },
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- clientController.watchHistoryOfAppointments: Unable to retrive the appointments"
+  try {
+    process.log.debug(
+      " -> clientController.watchHistoryOfAppointmentsBetweenDates"
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    const appointmentWithClients = await AppointmentModel.getAllAppointmentsBetweenDates(
+      "Client",
+      req.user._id,
+      req.body.start,
+      req.body.end
+    );
+    process.log.debug(
+      " <- clientController.watchHistoryOfAppointmentsBetweenDates"
+    );
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- clientController.watchHistoryOfAppointmentsBetweenDates Error:" +
+        err.message
+    );
+    res.status(400).send({
+      message:
+        "Error on clientController.watchHistoryOfAppointmentsBetweenDates",
+      trace: err.message,
+    });
   }
-
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
-  process.log.debug(" <- clientController.watchHistoryOfAppointments");
-  res.send(appointmentWithClients);
 };
 
 const deactivateAcount = async (req, res) => {
   try {
     process.log.debug(" -> clientController.modifyAccountData");
     process.log.data(req.body);
-    await userModel.findByIdAndUpdate(
-      req.user._id,
-      { status: 0, token: "" },
-      async (err, updatedDoc) => {
+    const updatedDoc = await userModel.softDelete(req.user._id);
+    if (!updatedDoc) {
+      process.log.warning(
+        " <- clientController.modifyAccountData: Unable to deactivate your profile"
+      );
+      return res.status(400).send({ message: `Unable to update your profile` });
+    }
+
+    await AppointmentModel.updateMany(
+      { ClientId: req.user._id, status: { $ne: 3 } },
+      { $set: { status: 0 } },
+      { multi: true },
+      (err, updatedDocuments) => {
         if (err) {
           process.log.warning(
-            " <- clientController.modifyAccountData: Unable to deactivate your profile"
+            " <- clientController.modifyAccountData: Unable to deactivate your active appointments"
           );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
+          return res.status(400).send({
+            message: `Unable to deactivate your active appointments`,
+          });
         }
         process.log.debug(
-          " <- clientController.modifyAccountData: user status set to 0"
+          " <- clientController.modifyAccountData: user active appointments status set to 0"
         );
-
-        await AppointmentModel.updateMany(
-          { ClientId: req.user._id, status: { $ne: 3 } },
-          { $set: { status: 0 } },
-          { multi: true },
-          (err, updatedDocuments) => {
-            if (err) {
-              process.log.warning(
-                " <- clientController.modifyAccountData: Unable to deactivate your active appointments"
-              );
-              return res.status(400).send({
-                message: `Unable to deactivate your active appointments`,
-              });
-            }
-            process.log.debug(
-              " <- clientController.modifyAccountData: user active appointments status set to 0"
-            );
-            res.send({ message: `Account deactivated` });
-          }
-        );
+        res.send({ message: `Account deactivated` });
       }
     );
   } catch (err) {
