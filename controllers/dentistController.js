@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
-const dentistModel = require("../models/dentist");
 const tools = require("../lib/tools");
 
 const createAppointment = async (req, res) => {
