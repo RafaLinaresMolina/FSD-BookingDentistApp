@@ -1,19 +1,17 @@
 const mongoose = require("mongoose");
 const UserModel = require("../models/user");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const tools = require('../lib/tools');
 
 const register = async (req, res) => {
   try {
     process.log.debug(" -> authController.register");
     process.log.data(req.body);
-    const Client = mongoose.model(
-      "Clients",
+    const User = mongoose.model(
+      "User",
       UserModel.schema,
       'Users'
     );
-    const clientDoc = new Client(req.body);
-    clientDoc.password = await bcrypt.hash(clientDoc.password, 9);
+    const clientDoc = new User(req.body);
     await clientDoc.save();
     res.send(clientDoc);
     process.log.debug(" <- authController.register");
@@ -25,35 +23,16 @@ const register = async (req, res) => {
   }
 };
 
-const isValidPassword = async (password, hashPasword) => {
-  try {
-    const isOk = await bcrypt.compare(password, hashPasword);
-    process.log.debug(`Password Match ? ${isOk}`)
-    return isOk;
-  } catch (err) {
-    throw err;
-  }
-};
-
-const generateToken = (payload) => {
-  return jwt.sign(payload, process.env.SECRET_AUTH_JWT, {
-    expiresIn: "30d",
-  });
-};
-
 const login = async (req, res) => {
   try {
     process.log.debug(" -> authController.login");
     process.log.data(req.body);
 
-    const user = await UserModel.findOne({ email: req.body.email, status: 1 });
-    if (!user) {
-      process.log.warning(` <- authController.login: Wrong credentials!`);
-      return res.status(401).send({ message: "Wrong credentials!" });
-    }
-
-    await isValidPassword(req.body.password, user.toJSON().password);
-    const token = generateToken({ _id: user._id, rolId: user.rolId });
+    const user = await UserModel.checkCredentials(req.body);
+    console.log(user)
+    await tools.isValidPassword(req.body.password, user.toObject().password)
+    
+    const token = tools.generateToken({ _id: user._id, rolId: user.rolId });
     user.token = token;
     await user.save();
     res.send({ token: token });
@@ -77,15 +56,10 @@ const logout = async (req, res) => {
 
     const token = req.headers.authorization.split(" ")[1];
 
-    const user = await UserModel.findOne({ token });
-    if (!user) {
-      process.log.warning(` <- authController.logout: User already not logged.`);
-      return res.status(401).message({ message: "User already not logged." });
-    }
-    user.token = null;
-    await user.save();
-    res.send({ message: "User logged out successfuly" });
+    await UserModel.logout(token);
     process.log.debug(" <- authController.logout");
+    res.send({ message: "User logged out successfuly" });
+    
   } catch (err) {
     process.log.error(` x- authController.logout ERROR: ${err.message}`);
     res
