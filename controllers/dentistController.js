@@ -1,33 +1,27 @@
-const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
-const dentistModel = require("../models/dentist");
-const tools = require("../lib/tools");
 
 const createAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.createAppointment");
     process.log.data(req.body);
-    const Appointment = await mongoose.model(
-      "Appointments",
-      AppointmentModel.schema,
-      "Appointments"
+
+    if (!req.body.ClientId) {
+      return res
+        .status(400)
+        .send({
+          message: "missing Client or Dentist for create the appointment",
+        });
+    }
+
+    if (req.body.ClientId) await UserModel.getUserById(req.body.ClientId);
+
+    const appointmentDoc = await AppointmentModel.createAppointment(
+      req.body,
+      req.body.ClientId,
+      req.user._id
     );
 
-    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
-
-    const newAppointment = req.body;
-    newAppointment.DentistId = req.user._id;
-    newAppointment.status = 2;
-
-    const appointmentDoc = new Appointment(newAppointment);
-
-    await tools.isDateAlreadyTaken(appointmentDoc.date);
-    tools.isMorningShift(appointmentDoc.date);
-    tools.isNightShift(appointmentDoc.date);
-    tools.isWeekend(appointmentDoc.date);
-
-    await appointmentDoc.save();
     res.send(appointmentDoc);
     process.log.debug(" <- dentistController.createAppointment");
   } catch (err) {
@@ -41,57 +35,16 @@ const createAppointment = async (req, res) => {
   }
 };
 
-const modifyAppointment = async (req, res) => {
-  try {
-    process.log.debug(" -> dentistController.modifyAppointment");
-    process.log.data(req.body);
-
-    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
-
-    await AppointmentModel.findOneAndUpdate(
-      { _id: req.body._id, DentistId: req.user._id },
-      req.body,
-      (err, appointmentDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- dentistController.modifyAppointment: appointment not found"
-          );
-          return res.status(400).send({ message: "appointment not found" });
-        }
-
-        res.send({ message: "appointment updated", appointmentDoc });
-      }
-    );
-  } catch (err) {
-    process.log.error(
-      ` x- dentistController.modifyAppointment ERROR: ${err.message}`
-    );
-    res.status(500).send({
-      message: "Error on dentistController.modifyAppointment",
-      trace: err.message,
-    });
-  }
-};
-
 const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.cancelAppointment");
     process.log.data(req.body);
 
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
-      DentistId: req.user._id,
-    });
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- dentistController.cancelAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    process.log.data(appointmentDoc);
-    appointmentDoc.status = 0;
-    await appointmentDoc.save();
-    res.send({ message: ` '${appointmentDoc.title}' is cancelled.` });
+    const appointmentDoc = await AppointmentModel.cancelAppointment(
+      req.body._id
+    );
+
+    res.send({ message: `${appointmentDoc.title} is cancelled.` });
     process.log.debug(" <- dentistController.cancelAppointment");
   } catch (err) {
     process.log.error(
@@ -104,23 +57,36 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
+const modifyAppointment = async (req, res) => {
+  try {
+    process.log.debug(" -> dentistController.modifyAppointment");
+    process.log.data(req.body);
+
+    if (req.body.ClientId) await UserModel.getUserById(req.body.ClientId);
+    const appointmentDoc = await AppointmentModel.modifyAppointment(
+      { _id: req.body._id, DentistId: req.user._id },
+      req.body
+    );
+
+    res.send({ message: "appointment updated", appointmentDoc });
+  } catch (err) {
+    process.log.error(
+      ` x- dentistController.modifyAppointment ERROR: ${err.message}`
+    );
+    res.status(500).send({
+      message: "Error on dentistController.modifyAppointment",
+      trace: err.message,
+    });
+  }
+};
+
 const acceptAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.acceptAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
-      DentistId: req.user._id,
-    });
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- dentistController.acceptAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    process.log.data(appointmentDoc);
-    appointmentDoc.status = 2;
-    await appointmentDoc.save();
+    const appointmentDoc = await AppointmentModel.acceptAppointment(
+      req.body._id
+    );
     res.send({ message: `'${appointmentDoc.title}' is accepted.` });
     process.log.debug(" <- dentistController.acceptAppointment");
   } catch (err) {
@@ -138,18 +104,10 @@ const endAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.endAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findById(req.body._id, {
-      DentistId: req.user._id,
-    });
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- dentistController.endAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    appointmentDoc.status = 3;
-    await appointmentDoc.save();
-    res.send({ message: `${appointmentDoc.title} is cancelled.` });
+    const appointmentDoc = await AppointmentModel.endAppointment(
+      req.body._id
+    );
+    res.send({ message: `'${appointmentDoc.title}' is accepted.` });
     process.log.debug(" <- dentistController.endAppointment");
   } catch (err) {
     process.log.error(
@@ -166,22 +124,11 @@ const modifyAccountData = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.modifyAccountData");
     process.log.data(req.body);
-    await AppointmentModel.findByIdAndUpdate(
-      req.user._id,
-      req.body,
-      (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- dentistController.modifyAccountData: Unable to update your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(" <- dentistController.modifyAccountData");
-        res.send({ message: `${updatedDoc.name} has been updated.` });
-      }
-    );
+
+    const user = await UserModel.update(req.user._id, req.body);
+
+    process.log.debug(" <- dentistController.modifyAccountData");
+    res.send({ message: `'${user.toObject().name}' has been updated.` });
   } catch (err) {
     process.log.error(
       ` x- dentistController.modifyAccountData ERROR: ${err.message}`
@@ -194,123 +141,103 @@ const modifyAccountData = async (req, res) => {
 };
 
 const watchHistoryOfAppointments = async (req, res) => {
-  process.log.debug(" -> dentistController.watchHistoryOfAppointments");
+  try {
+    const query = {
+      DentistId: req.user._id,
+    };
 
-  const appointmentDocs = await AppointmentModel.find({
-    DentistId: req.user._id,
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- dentistController.watchHistoryOfAppointments: Unable to retrive the appointments"
+    process.log.debug(" -> dentistController.watchHistoryOfAppointments");
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    process.log.debug(" <- dentistController.watchHistoryOfAppointments");
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- dentistController.watchHistoryOfAppointments Error:" + err.message
+    );
+    res.status(400).send({
+      message: "Error on dentistController.watchHistoryOfAppointments",
+      trace: err.message,
+    });
   }
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
-  process.log.debug(" <- dentistController.watchHistoryOfAppointments");
-  res.send(appointmentWithClients);
 };
 
 const watchHistoryOfAppointmentsFromPatient = async (req, res) => {
-  process.log.debug(
-    " -> dentistController.watchHistoryOfAppointmentsFromPatient"
-  );
+  try {
+    const query = {
+      ClientId: req.body.ClientId,
+    };
 
-  const appointmentDocs = await AppointmentModel.find({
-    ClientId: req.body.ClientId,
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- dentistController.watchHistoryOfAppointmentsFromPatient: Unable to retrive the appointments"
+    process.log.debug(" -> dentistController.watchHistoryOfAppointmentsFromPatient");
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    process.log.debug(" <- dentistController.watchHistoryOfAppointmentsFromPatient");
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- dentistController.watchHistoryOfAppointmentsFromPatient Error:" + err.message
+    );
+    res.status(400).send({
+      message: "Error on dentistController.watchHistoryOfAppointmentsFromPatient",
+      trace: err.message,
+    });
   }
-
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
-  process.log.debug(
-    " <- dentistController.watchHistoryOfAppointmentsFromPatient"
-  );
-  res.send(appointmentWithClients);
 };
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
-  process.log.debug(
-    " -> dentistController.watchHistoryOfAppointmentsFromPatient"
-  );
-  process.log.data(req.user._id);
-  const appointmentDocs = await AppointmentModel.find({
-    DentistId: req.user._id,
-    date: {
-      $gt: req.body.start,
-      $lt: req.body.end,
-    },
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- dentistController.watchHistoryOfAppointmentsBetweenDates: Unable to retrive the appointments"
+  try {
+    const query = {
+      DentistId: req.user._id,
+      date: {
+        $gt: req.body.start,
+        $lt: req.body.end,
+      },
+    };
+    process.log.debug(
+      " -> dentistController.watchHistoryOfAppointmentsBetweenDates"
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
+    );
+    process.log.debug(
+      " <- dentistController.watchHistoryOfAppointmentsBetweenDates"
+    );
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- dentistController.watchHistoryOfAppointmentsBetweenDates Error:" +
+        err.message
+    );
+    res.status(400).send({
+      message:
+        "Error on dentistController.watchHistoryOfAppointmentsBetweenDates",
+      trace: err.message,
+    });
   }
-
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
-  process.log.debug(
-    " <- dentistController.watchHistoryOfAppointmentsBetweenDates"
-  );
-  res.send(appointmentWithClients);
 };
 
 const deactivateAcount = async (req, res) => {
   try {
+  
     process.log.debug(" -> dentistController.modifyAccountData");
     process.log.data(req.body);
-    await userModel.findByIdAndUpdate(
-      req.user._id,
-      { status: 0, token: "" },
-      async (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- dentistController.modifyAccountData: Unable to deactivate your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(
-          " <- dentistController.modifyAccountData: user status set to 0"
-        );
+    const updatedDoc = await userModel.softDelete(req.user._id);
+    if (!updatedDoc) {
+      process.log.warning(
+        " <- dentistController.modifyAccountData: Unable to deactivate your profile"
+      );
+      return res.status(400).send({ message: `Unable to update your profile` });
+    }
 
-        await AppointmentModel.updateMany(
-          { DentistId: req.user._id, status: { $ne: 3 } },
-          { $set: { status: 0 } },
-          { multi: true },
-          (err, updatedDocuments) => {
-            if (err) {
-              process.log.warning(
-                " <- dentistController.modifyAccountData: Unable to deactivate your active appointments"
-              );
-              return res.status(400).send({
-                message: `Unable to deactivate your active appointments`,
-              });
-            }
-            process.log.debug(
-              " <- dentistController.modifyAccountData: user active appointments status set to 0"
-            );
-            res.send({ message: `Account deactivated` });
-          }
-        );
-      }
-    );
+    const query = { DentistId: id, status: { $ne: 3 } };
+    const set = { $set: { status: 0 } };
+    const options = { multi: true };
+
+    await AppointmentModel.cancelAppointmentsOnCascade(query, set, options);
+
+    res.send({ message: `Account deactivated` });
   } catch (err) {
     process.log.error(
       ` x- dentistController.modifyAccountData ERROR: ${err.message}`
