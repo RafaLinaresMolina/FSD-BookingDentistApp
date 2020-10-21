@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const UserModel = require("./user");
 const Schema = mongoose.Schema;
 const AppointmentSchema = mongoose.Schema({
   title: {
