@@ -123,6 +123,7 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
 
 const deactivateAcount = async (req, res) => {
   try {
+  
     process.log.debug(" -> clientController.modifyAccountData");
     process.log.data(req.body);
     const updatedDoc = await userModel.softDelete(req.user._id);
@@ -133,7 +134,11 @@ const deactivateAcount = async (req, res) => {
       return res.status(400).send({ message: `Unable to update your profile` });
     }
 
-    await AppointmentModel.cancelAppointmentsOnCascade(req.user._id);
+    const query = { ClientId: id, status: { $ne: 3 } };
+    const set = { $set: { status: 0 } };
+    const options = { multi: true };
+
+    await AppointmentModel.cancelAppointmentsOnCascade(query, set, options);
 
     res.send({ message: `Account deactivated` });
   } catch (err) {
