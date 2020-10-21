@@ -113,8 +113,8 @@ UserSchema.statics.getAllLoggedUsers = async function () {
 
 UserSchema.methods.generateAuthToken = function () {
   const user = this;
-  const token = jwt.sign({ _id: user._id }, "mimamamemimamucho", {
-    expiresIn: "2y",
+  const token = jwt.sign({ _id: user._id, roleId: user.roleId }, process.env.SECRET_AUTH_JWT, {
+    expiresIn: "30d",
   });
   return token;
 };
