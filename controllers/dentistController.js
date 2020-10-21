@@ -2,31 +2,19 @@ const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
 const tools = require("../lib/tools");
+const UserModel = require("../models/user");
 
 const createAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.createAppointment");
     process.log.data(req.body);
-    const Appointment = await mongoose.model(
-      "Appointments",
-      AppointmentModel.schema,
-      "Appointments"
+
+    const appointmentDoc = await AppointmentModel.createAppointment(
+      req.body,
+      req.body.ClientId,
+      req.user._id
     );
 
-    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
-
-    const newAppointment = req.body;
-    newAppointment.DentistId = req.user._id;
-    newAppointment.status = 2;
-
-    const appointmentDoc = new Appointment(newAppointment);
-
-    await tools.isDateAlreadyTaken(appointmentDoc.date);
-    tools.isMorningShift(appointmentDoc.date);
-    tools.isNightShift(appointmentDoc.date);
-    tools.isWeekend(appointmentDoc.date);
-
-    await appointmentDoc.save();
     res.send(appointmentDoc);
     process.log.debug(" <- dentistController.createAppointment");
   } catch (err) {
@@ -40,57 +28,16 @@ const createAppointment = async (req, res) => {
   }
 };
 
-const modifyAppointment = async (req, res) => {
-  try {
-    process.log.debug(" -> dentistController.modifyAppointment");
-    process.log.data(req.body);
-
-    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
-
-    await AppointmentModel.findOneAndUpdate(
-      { _id: req.body._id, DentistId: req.user._id },
-      req.body,
-      (err, appointmentDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- dentistController.modifyAppointment: appointment not found"
-          );
-          return res.status(400).send({ message: "appointment not found" });
-        }
-
-        res.send({ message: "appointment updated", appointmentDoc });
-      }
-    );
-  } catch (err) {
-    process.log.error(
-      ` x- dentistController.modifyAppointment ERROR: ${err.message}`
-    );
-    res.status(500).send({
-      message: "Error on dentistController.modifyAppointment",
-      trace: err.message,
-    });
-  }
-};
-
 const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.cancelAppointment");
     process.log.data(req.body);
 
-    const appointmentDoc = await AppointmentModel.findOne({
-      _id: req.body._id,
-      DentistId: req.user._id,
-    });
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- dentistController.cancelAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    process.log.data(appointmentDoc);
-    appointmentDoc.status = 0;
-    await appointmentDoc.save();
-    res.send({ message: ` '${appointmentDoc.title}' is cancelled.` });
+    const appointmentDoc = await AppointmentModel.cancelAppointment(
+      req.body._id
+    );
+
+    res.send({ message: `${appointmentDoc.title} is cancelled.` });
     process.log.debug(" <- dentistController.cancelAppointment");
   } catch (err) {
     process.log.error(
@@ -98,6 +45,37 @@ const cancelAppointment = async (req, res) => {
     );
     res.status(500).send({
       message: "Error on dentistController.cancelAppointment",
+      trace: err.message,
+    });
+  }
+};
+
+const modifyAppointment = async (req, res) => {
+  try {
+    process.log.debug(" -> dentistController.modifyAppointment");
+    process.log.data(req.body);
+
+    if (req.body.ClientId) await UserModel.getUserById(req.body.ClientId);
+
+    const appointmentDoc = await AppointmentModel.modifyAppointment(
+      { _id: req.body._id, DentistId: req.user._id },
+      req.body
+    );
+
+    if (!appointmentDoc) {
+      process.log.warning(
+        " <- dentistController.modifyAppointment: appointment not found"
+      );
+      return res.status(400).send({ message: "appointment not found" });
+    }
+
+    res.send({ message: "appointment updated", appointmentDoc });
+  } catch (err) {
+    process.log.error(
+      ` x- dentistController.modifyAppointment ERROR: ${err.message}`
+    );
+    res.status(500).send({
+      message: "Error on dentistController.modifyAppointment",
       trace: err.message,
     });
   }
@@ -206,9 +184,12 @@ const watchHistoryOfAppointments = async (req, res) => {
       .status(400)
       .send({ message: `Unable to retrive the appointments` });
   }
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
+  let plainJsonArray = await appointmentDocs.map((element) => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(
+    ["Client", "Dentist"],
+    plainJsonArray
+  );
+  appointmentWithClients = await Promise.all(appointmentWithClients);
   process.log.debug(" <- dentistController.watchHistoryOfAppointments");
   res.send(appointmentWithClients);
 };
@@ -230,9 +211,12 @@ const watchHistoryOfAppointmentsFromPatient = async (req, res) => {
       .send({ message: `Unable to retrive the appointments` });
   }
 
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
+  let plainJsonArray = await appointmentDocs.map((element) => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(
+    ["Client", "Dentist"],
+    plainJsonArray
+  );
+  appointmentWithClients = await Promise.all(appointmentWithClients);
   process.log.debug(
     " <- dentistController.watchHistoryOfAppointmentsFromPatient"
   );
@@ -260,9 +244,12 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
       .send({ message: `Unable to retrive the appointments` });
   }
 
-  let plainJsonArray = await appointmentDocs.map(element => element.toJSON());
-  let appointmentWithClients = await tools.AppointmentRelations(['Client', 'Dentist'],plainJsonArray)
-  appointmentWithClients = await Promise.all(appointmentWithClients)
+  let plainJsonArray = await appointmentDocs.map((element) => element.toJSON());
+  let appointmentWithClients = await tools.AppointmentRelations(
+    ["Client", "Dentist"],
+    plainJsonArray
+  );
+  appointmentWithClients = await Promise.all(appointmentWithClients);
   process.log.debug(
     " <- dentistController.watchHistoryOfAppointmentsBetweenDates"
   );

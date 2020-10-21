@@ -45,15 +45,20 @@ AppointmentSchema.statics.createAppointment = async function (
   ClientId,
   DentistId = null
 ) {
-  const tools = require("../lib/tools");
-  const date = new Date(appointment.date);
-  await this.isDateTaken(date);
-  tools.isMorningShift(date);
-  tools.isNightShift(date);
-  tools.isWeekend(date);
-  appointment.ClientId = ClientId;
-  appointment.DentistId = DentistId;
-  return await this.create(appointment);
+  try{
+    const tools = require("../lib/tools");
+    const date = new Date(appointment.date);
+    await this.isDateTaken(date);
+    tools.isMorningShift(date);
+    tools.isNightShift(date);
+    tools.isWeekend(date);
+    appointment.ClientId = ClientId;
+    appointment.DentistId = DentistId;
+    return await this.create(appointment);
+  }catch(err){
+    throw err;
+  }
+  
 };
 
 AppointmentSchema.statics.isDateTaken = async function (date) {
@@ -73,6 +78,23 @@ AppointmentSchema.statics.isDateTaken = async function (date) {
 AppointmentSchema.statics.cancelAppointment = async function (id) {
   try {
     const appointmentDoc = await this.findById(id);
+    if (!appointmentDoc) {
+      process.log.warning(
+        " <- AppointmentSchema.statics.cancelAppointment: appointment not found"
+      );
+      throw new Error(`appointment not found`);
+    }
+    appointmentDoc.status = 0;
+    await appointmentDoc.save();
+    return appointmentDoc;
+  } catch (err) {
+    throw err;
+  }
+};
+
+AppointmentSchema.statics.modifyAppointment = async function (query, data) {
+  try {
+    const appointmentDoc = await this.findOneAndUpdate(query, data).exec();
     if (!appointmentDoc) {
       process.log.warning(
         " <- AppointmentSchema.statics.cancelAppointment: appointment not found"
