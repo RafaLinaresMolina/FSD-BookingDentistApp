@@ -69,11 +69,13 @@ const modifyAccountData = async (req, res) => {
 const watchHistoryOfAppointments = async (req, res) => {
   try {
     const query = {
-      ClientId: req.user._id
+      ClientId: req.user._id,
     };
 
     process.log.debug(" -> clientController.watchHistoryOfAppointments");
-    const appointmentWithClients = await AppointmentModel.getAllAppointments(query);
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
+    );
     process.log.debug(" <- clientController.watchHistoryOfAppointments");
     res.send(appointmentWithClients);
   } catch (err) {
@@ -99,7 +101,9 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
     process.log.debug(
       " -> clientController.watchHistoryOfAppointmentsBetweenDates"
     );
-    const appointmentWithClients = await AppointmentModel.getAllAppointments(query);
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
+    );
     process.log.debug(
       " <- clientController.watchHistoryOfAppointmentsBetweenDates"
     );
