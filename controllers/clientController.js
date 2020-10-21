@@ -68,10 +68,13 @@ const modifyAccountData = async (req, res) => {
 
 const watchHistoryOfAppointments = async (req, res) => {
   try {
+    const query = {
+      ClientId: req.user._id,
+    };
+
     process.log.debug(" -> clientController.watchHistoryOfAppointments");
     const appointmentWithClients = await AppointmentModel.getAllAppointments(
-      "Client",
-      req.user._id
+      query
     );
     process.log.debug(" <- clientController.watchHistoryOfAppointments");
     res.send(appointmentWithClients);
@@ -88,14 +91,18 @@ const watchHistoryOfAppointments = async (req, res) => {
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
   try {
+    const query = {
+      ClientId: req.user._id,
+      date: {
+        $gt: req.body.start,
+        $lt: req.body.end,
+      },
+    };
     process.log.debug(
       " -> clientController.watchHistoryOfAppointmentsBetweenDates"
     );
-    const appointmentWithClients = await AppointmentModel.getAllAppointmentsBetweenDates(
-      "Client",
-      req.user._id,
-      req.body.start,
-      req.body.end
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
     );
     process.log.debug(
       " <- clientController.watchHistoryOfAppointmentsBetweenDates"
@@ -116,6 +123,7 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
 
 const deactivateAcount = async (req, res) => {
   try {
+  
     process.log.debug(" -> clientController.modifyAccountData");
     process.log.data(req.body);
     const updatedDoc = await userModel.softDelete(req.user._id);
@@ -126,9 +134,12 @@ const deactivateAcount = async (req, res) => {
       return res.status(400).send({ message: `Unable to update your profile` });
     }
 
-    await AppointmentModel.cancelAppointmentsOnCascade(req.user._id);
+    const query = { ClientId: id, status: { $ne: 3 } };
+    const set = { $set: { status: 0 } };
+    const options = { multi: true };
 
-    
+    await AppointmentModel.cancelAppointmentsOnCascade(query, set, options);
+
     res.send({ message: `Account deactivated` });
   } catch (err) {
     process.log.error(

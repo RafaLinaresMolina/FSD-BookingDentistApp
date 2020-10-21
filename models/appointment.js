@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const UserModel = require("./user");
 const Schema = mongoose.Schema;
 const AppointmentSchema = mongoose.Schema({
   title: {
@@ -45,15 +44,19 @@ AppointmentSchema.statics.createAppointment = async function (
   ClientId,
   DentistId = null
 ) {
-  const tools = require("../lib/tools");
-  const date = new Date(appointment.date);
-  await this.isDateTaken(date);
-  tools.isMorningShift(date);
-  tools.isNightShift(date);
-  tools.isWeekend(date);
-  appointment.ClientId = ClientId;
-  appointment.DentistId = DentistId;
-  return await this.create(appointment);
+  try {
+    const tools = require("../lib/tools");
+    const date = new Date(appointment.date);
+    await this.isDateTaken(date);
+    tools.isMorningShift(date);
+    tools.isNightShift(date);
+    tools.isWeekend(date);
+    appointment.ClientId = ClientId;
+    appointment.DentistId = DentistId;
+    return await this.create(appointment);
+  } catch (err) {
+    throw err;
+  }
 };
 
 AppointmentSchema.statics.isDateTaken = async function (date) {
@@ -87,6 +90,40 @@ AppointmentSchema.statics.cancelAppointment = async function (id) {
   }
 };
 
+AppointmentSchema.statics.acceptAppointment = async function (id) {
+  try {
+    const appointmentDoc = await this.findById(id);
+    if (!appointmentDoc) {
+      process.log.warning(
+        " <- AppointmentSchema.statics.acceptAppointment: appointment not found"
+      );
+      throw new Error(`appointment not found`);
+    }
+    appointmentDoc.status = 2;
+    await appointmentDoc.save();
+    return appointmentDoc;
+  } catch (err) {
+    throw err;
+  }
+};
+
+AppointmentSchema.statics.modifyAppointment = async function (query, data) {
+  try {
+    const appointmentDoc = await this.findOneAndUpdate(query, data).exec();
+    if (!appointmentDoc) {
+      process.log.warning(
+        " <- AppointmentSchema.statics.modifyAppointment: appointment not found"
+      );
+      throw new Error(`appointment not found`);
+    }
+    appointmentDoc.status = 0;
+    await appointmentDoc.save();
+    return appointmentDoc;
+  } catch (err) {
+    throw err;
+  }
+};
+
 AppointmentSchema.statics.confirmAppointment = async function (id) {
   try {
     const appointmentDoc = await this.findById(id);
@@ -104,9 +141,26 @@ AppointmentSchema.statics.confirmAppointment = async function (id) {
   }
 };
 
-AppointmentSchema.statics.getAllAppointments = async function (userType, id) {
+AppointmentSchema.statics.endAppointment = async function (id) {
   try {
-    const appointmentDocs = await this.find({ [userType + "Id"]: id });
+    const appointmentDoc = await this.findById(id);
+    if (!appointmentDoc) {
+      process.log.warning(
+        " <- AppointmentSchema.statics.endAppointment: appointment not found"
+      );
+      throw new Error(`appointment not found`);
+    }
+    appointmentDoc.status = 3;
+    await appointmentDoc.save();
+    return appointmentDoc;
+  } catch (err) {
+    throw err;
+  }
+};
+
+AppointmentSchema.statics.getAllAppointments = async function (query) {
+  try {
+    const appointmentDocs = await this.find(query);
     if (!appointmentDocs) {
       process.log.warning(
         " <- AppointmentSchema.statics.getAllAppointments: Unable to retrive the appointments"
@@ -122,55 +176,23 @@ AppointmentSchema.statics.getAllAppointments = async function (userType, id) {
   }
 };
 
-AppointmentSchema.statics.getAllAppointmentsBetweenDates = async function (
-  userType,
-  id,
-  start,
-  end
-) {
-  try {
-    const appointmentDocs = await this.find({
-      [userType + "Id"]: id,
-      date: {
-        $gt: start,
-        $lt: end,
-      },
-    });
-    if (!appointmentDocs) {
-      process.log.warning(
-        " <- AppointmentSchema.statics.getAllAppointmentsBetweenDates: Unable to retrive the appointments"
-      );
-      return res
-        .status(400)
-        .send({ message: `Unable to retrive the appointments` });
-    }
-
-    return appointmentDocs;
-  } catch (err) {
-    throw err;
-  }
-};
-
 AppointmentSchema.statics.cancelAppointmentsOnCascade = async function (
-  collection,
-  id
+  query,
+  set,
+  options
 ) {
-  await this.updateMany(
-    { [collection+'Id']: id, status: { $ne: 3 } },
-    { $set: { status: 0 } },
-    { multi: true },
-    (err, updatedDocuments) => {
-      if (err) {
-        process.log.warning(
-          " <- AppointmentSchema.statics.cancelAppointmentsOnCascade: Unable to deactivate your active appointments"
-        );
-        throw new Error(`Unable to deactivate your active appointments`);
-      }
-      process.log.debug(
-        " <- AppointmentSchema.statics.cancelAppointmentsOnCascade: user active appointments status set to 0"
+  const updatedDocuments = await this.updateMany(query, set, options).exec();
+    if (!updatedDocuments) {
+      process.log.warning(
+        " <- AppointmentSchema.statics.cancelAppointmentsOnCascade: Unable to deactivate your active appointments"
       );
+      throw new Error(`Unable to deactivate your active appointments`);
     }
-  );
+    process.log.debug(
+      " <- AppointmentSchema.statics.cancelAppointmentsOnCascade: user active appointments status set to 0"
+    );
+    return updatedDocuments;
+  
 };
 
 const AppointmentModel = mongoose.model(
