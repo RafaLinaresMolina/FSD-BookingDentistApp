@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
-const tools = require("../lib/tools");
-const UserModel = require("../models/user");
 
 const createAppointment = async (req, res) => {
   try {
@@ -119,7 +117,6 @@ const endAppointment = async (req, res) => {
     });
   }
 };
-
 
 const modifyAccountData = async (req, res) => {
   try {
