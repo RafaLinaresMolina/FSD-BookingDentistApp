@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const userModel = require("../models/user");
 
@@ -6,6 +5,16 @@ const createAppointment = async (req, res) => {
   try {
     process.log.debug(" -> dentistController.createAppointment");
     process.log.data(req.body);
+
+    if (!req.body.ClientId) {
+      return res
+        .status(400)
+        .send({
+          message: "missing Client or Dentist for create the appointment",
+        });
+    }
+
+    if (req.body.ClientId) await UserModel.getUserById(req.body.ClientId);
 
     const appointmentDoc = await AppointmentModel.createAppointment(
       req.body,
@@ -58,13 +67,6 @@ const modifyAppointment = async (req, res) => {
       { _id: req.body._id, DentistId: req.user._id },
       req.body
     );
-
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- dentistController.modifyAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: "appointment not found" });
-    }
 
     res.send({ message: "appointment updated", appointmentDoc });
   } catch (err) {

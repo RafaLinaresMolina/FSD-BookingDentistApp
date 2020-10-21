@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const AppointmentModel = require("../models/appointment");
 const tools = require("../lib/tools");
 const UserModel = require("../models/user");
@@ -7,23 +6,24 @@ const createAppointment = async (req, res) => {
   try {
     process.log.debug(" -> adminController.createAppointment");
     process.log.data(req.body);
-    const Appointment = await mongoose.model(
-      "Appointments",
-      AppointmentModel.schema,
-      "Appointments"
+
+    if (!req.body.ClientId || !req.body.DentistId) {
+      return res
+        .status(400)
+        .send({
+          message: "missing Client or Dentist for create the appointment",
+        });
+    }
+
+    if (req.body.ClientId) await UserModel.getUserById(req.body.ClientId);
+    if (req.body.DentistId) await UserModel.getUserById(req.body.DentistId);
+
+    const appointmentDoc = await AppointmentModel.createAppointment(
+      req.body,
+      req.body.ClientId,
+      req.body.DentistId
     );
 
-    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
-    if (req.body.DentistId) await tools.userFound(req.body.DentistId);
-
-    const appointmentDoc = new Appointment(req.body);
-
-    await tools.isDateAlreadyTaken(appointmentDoc.date);
-    tools.isMorningShift(appointmentDoc.date);
-    tools.isNightShift(appointmentDoc.date);
-    tools.isWeekend(appointmentDoc.date);
-
-    await appointmentDoc.save();
     res.send(appointmentDoc);
     process.log.debug(" <- adminController.createAppointment");
   } catch (err) {
@@ -42,27 +42,15 @@ const modifyAppointment = async (req, res) => {
     process.log.debug(" -> adminController.modifyAppointment");
     process.log.data(req.body);
 
-    if (req.body.ClientId) await tools.userFound(req.body.ClientId);
-    if (req.body.DentistId) await tools.userFound(req.body.DentistId);
+    if (req.body.ClientId) await UserModel.getUserById(req.body.ClientId);
+    if (req.body.DentistId) await UserModel.getUserById(req.body.DentistId);
 
-    await AppointmentModel.findByIdAndUpdate(
-      req.body._id,
-      {
-        ClientId: req.body.ClientId,
-        DentistId: req.user.DentistId,
-      },
-      req.body,
-      (err, appointmentDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.modifyAppointment: appointment not found"
-          );
-          return res.status(400).send({ message: "appointment not found" });
-        }
-
-        res.send({ message: "appointment updated" });
-      }
+    const appointmentDoc = await AppointmentModel.modifyAppointment(
+      { _id: req.body._id},
+      req.body
     );
+
+    res.send({ message: "appointment updated", appointmentDoc });
   } catch (err) {
     process.log.error(
       ` x- adminController.modifyAppointment ERROR: ${err.message}`
@@ -78,15 +66,11 @@ const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> adminController.cancelAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findById(req.body._id);
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- adminController.cancelAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    appointmentDoc.status = 0;
-    await appointmentDoc.save();
+
+    const appointmentDoc = await AppointmentModel.cancelAppointment(
+      req.body._id
+    );
+
     res.send({ message: `${appointmentDoc.title} is cancelled.` });
     process.log.debug(" <- adminController.cancelAppointment");
   } catch (err) {
@@ -104,16 +88,10 @@ const acceptAppointment = async (req, res) => {
   try {
     process.log.debug(" -> adminController.acceptAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findById(req.body._id);
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- adminController.acceptAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    appointmentDoc.status = 2;
-    await appointmentDoc.save();
-    res.send({ message: `${appointmentDoc.title} is cancelled.` });
+    const appointmentDoc = await AppointmentModel.acceptAppointment(
+      req.body._id
+    );
+    res.send({ message: `'${appointmentDoc.title}' is accepted.` });
     process.log.debug(" <- adminController.acceptAppointment");
   } catch (err) {
     process.log.error(
@@ -130,16 +108,10 @@ const endAppointment = async (req, res) => {
   try {
     process.log.debug(" -> adminController.endAppointment");
     process.log.data(req.body);
-    const appointmentDoc = await AppointmentModel.findById(req.body._id);
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- adminController.endAppointment: appointment not found"
-      );
-      return res.status(400).send({ message: `appointment not found` });
-    }
-    appointmentDoc.status = 3;
-    await appointmentDoc.save();
-    res.send({ message: `${appointmentDoc.title} is cancelled.` });
+    const appointmentDoc = await AppointmentModel.endAppointment(
+      req.body._id
+    );
+    res.send({ message: `'${appointmentDoc.title}' is accepted.` });
     process.log.debug(" <- adminController.endAppointment");
   } catch (err) {
     process.log.error(
@@ -157,24 +129,10 @@ const modifyAccountData = async (req, res) => {
     process.log.debug(" -> adminController.modifyAccountData");
     process.log.data(req.body);
 
-    const Model = tools.getModelByRole(+req.user.roleId);
+    const user = await UserModel.update(req.user._id, req.body);
 
-    await Model.findByIdAndUpdate(
-      req.user._id,
-      req.body,
-      (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.modifyAccountData: Unable to update your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(" <- adminController.modifyAccountData");
-        res.send({ message: `${updatedDoc.name} has been updated.` });
-      }
-    );
+    process.log.debug(" <- adminController.modifyAccountData");
+    res.send({ message: `'${user.toObject().name}' has been updated.` });
   } catch (err) {
     process.log.error(
       ` x- adminController.modifyAccountData ERROR: ${err.message}`
@@ -191,24 +149,10 @@ const modifyAccountDataForUser = async (req, res) => {
     process.log.debug(" -> adminController.modifyAccountDataForUser");
     process.log.data(req.body);
 
-    const Model = tools.getModelByRole(+req.body.roleId);
-    
-    await Model.findByIdAndUpdate(
-      req.body._id,
-      req.body,
-      (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.modifyAccountDataForUser: Unable to update your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(" <- adminController.modifyAccountDataForUser");
-        res.send({ message: `${updatedDoc.name} has been updated.` });
-      }
-    );
+    const user = await UserModel.update(req.body._id, req.body);
+
+    process.log.debug(" <- adminController.modifyAccountDataForUser");
+    res.send({ message: `'${user.toObject().name}' has been updated.` });
   } catch (err) {
     process.log.error(
       ` x- adminController.modifyAccountDataForUser ERROR: ${err.message}`
@@ -224,22 +168,11 @@ const changeRoleToDentist = async (req, res) => {
   try {
     process.log.debug(" -> adminController.changeRoleForDentist");
     process.log.data(req.body);
-    await AppointmentModel.findByIdAndUpdate(
-      req.user._id,
-      { roleId: 2, number: req.body.number, token: null },
-      (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.changeRoleForDentist: Unable to update your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(" <- adminController.changeRoleForDentist");
-        res.send({ message: `${updatedDoc.name} has been updated.` });
-      }
-    );
+    await UserModel.changeRoleId(req.body._id, 2);
+
+    process.log.debug(" <- adminController.changeRoleForDentist");
+    res.send({ message: `${updatedDoc.name} has been updated.` });
+      
   } catch (err) {
     process.log.error(
       ` x- adminController.changeRoleForDentist ERROR: ${err.message}`
@@ -255,22 +188,11 @@ const changeRoleToAdmin = async (req, res) => {
   try {
     process.log.debug(" -> adminController.changeRoleToAdmin");
     process.log.data(req.body);
-    await AppointmentModel.findByIdAndUpdate(
-      req.user._id,
-      { roleId: 0, token: "" },
-      (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.changeRoleToAdmin: Unable to update your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(" <- adminController.changeRoleToAdmin");
-        res.send({ message: `${updatedDoc.name} has been updated.` });
-      }
-    );
+    await UserModel.changeRoleId(req.body._id, 0);
+
+    process.log.debug(" <- adminController.changeRoleToAdmin");
+    res.send({ message: `${updatedDoc.name} has been updated.` });
+      
   } catch (err) {
     process.log.error(
       ` x- adminController.changeRoleToAdmin ERROR: ${err.message}`
@@ -286,116 +208,112 @@ const changeRoleToClient = async (req, res) => {
   try {
     process.log.debug(" -> adminController.changeRoleToClient");
     process.log.data(req.body);
-    await AppointmentModel.findByIdAndUpdate(
-      req.user._id,
-      { roleId: 1, token: "" },
-      (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.changeRoleToClient: Unable to update your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(" <- adminController.changeRoleToClient");
-        res.send({ message: `${updatedDoc.name} has been updated.` });
-      }
-    );
+    await UserModel.changeRoleId(req.body._id, 1);
+
+    process.log.debug(" <- adminController.changeRoleToClient");
+    res.send({ message: `${updatedDoc.name} has been updated.` });
+      
   } catch (err) {
     process.log.error(
-      ` x- adminController.changeRoleForDentist ERROR: ${err.message}`
+      ` x- adminController.changeRoleToClient ERROR: ${err.message}`
     );
     res.status(500).send({
-      message: "Error on adminController.changeRoleForDentist",
+      message: "Error on adminController.changeRoleToClient",
       trace: err.message,
     });
   }
 };
 
 const watchHistoryOfDentistAppointments = async (req, res) => {
-  process.log.debug(" -> adminController.watchHistoryOfAppointments");
+  try {
+    const query = {
+      DentistId: req.body.DentistId,
+    };
 
-  const appointmentDocs = await AppointmentModel.find({
-    DentistId: req.body._id,
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- adminController.watchHistoryOfAppointments: Unable to retrive the appointments"
+    process.log.debug(" -> adminController.watchHistoryOfDentistAppointments");
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    process.log.debug(" <- adminController.watchHistoryOfDentistAppointments");
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- adminController.watchHistoryOfDentistAppointments Error:" + err.message
+    );
+    res.status(400).send({
+      message: "Error on adminController.watchHistoryOfDentistAppointments",
+      trace: err.message,
+    });
   }
-  process.log.debug(" <- adminController.watchHistoryOfAppointments");
-  res.send(appointmentDocs);
 };
 
 const watchHistoryOfClientAppointments = async (req, res) => {
-  process.log.debug(" -> adminController.watchHistoryOfAppointments");
+  try {
+    const query = {
+      ClientId: req.body.ClientId,
+    };
 
-  const appointmentDocs = await AppointmentModel.find({
-    ClientId: req.body._id,
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- adminController.watchHistoryOfAppointments: Unable to retrive the appointments"
+    process.log.debug(" -> adminController.watchHistoryOfClientAppointments");
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    process.log.debug(" <- adminController.watchHistoryOfClientAppointments");
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- adminController.watchHistoryOfClientAppointments Error:" + err.message
+    );
+    res.status(400).send({
+      message: "Error on adminController.watchHistoryOfClientAppointments",
+      trace: err.message,
+    });
   }
-  process.log.debug(" <- adminController.watchHistoryOfAppointments");
-  res.send(appointmentDocs);
 };
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
-  process.log.debug(
-    " -> adminController.watchHistoryOfAppointmentsFromPatient"
-  );
-
-  const appointmentDocs = await AppointmentModel.find({
-    DentistId: req.user._id,
-    date: {
-      $gt: req.body.start,
-      $lt: req.body.end,
-    },
-  });
-  if (!appointmentDocs) {
-    process.log.warning(
-      " <- adminController.watchHistoryOfAppointmentsBetweenDates: Unable to retrive the appointments"
+  try {
+    const query = {
+      date: {
+        $gt: req.body.start,
+        $lt: req.body.end,
+      },
+    };
+    process.log.debug(
+      " -> adminController.watchHistoryOfAppointmentsBetweenDates"
     );
-    return res
-      .status(400)
-      .send({ message: `Unable to retrive the appointments` });
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(
+      query
+    );
+    process.log.debug(
+      " <- adminController.watchHistoryOfAppointmentsBetweenDates"
+    );
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- adminController.watchHistoryOfAppointmentsBetweenDates Error:" +
+        err.message
+    );
+    res.status(400).send({
+      message:
+        "Error on adminController.watchHistoryOfAppointmentsBetweenDates",
+      trace: err.message,
+    });
   }
-  process.log.debug(
-    " <- adminController.watchHistoryOfAppointmentsBetweenDates"
-  );
-  res.send(appointmentDocs);
 };
 
 const deactivateAcount = async (req, res) => {
   try {
+  
     process.log.debug(" -> adminController.modifyAccountData");
     process.log.data(req.body);
-    await userModel.findByIdAndUpdate(
-      req.user._id,
-      { status: 0, token: "" },
-      async (err, updatedDoc) => {
-        if (err) {
-          process.log.warning(
-            " <- adminController.modifyAccountData: Unable to deactivate your profile"
-          );
-          return res
-            .status(400)
-            .send({ message: `Unable to update your profile` });
-        }
-        process.log.debug(
-          " <- adminController.modifyAccountData: user status set to 0"
-        );
-      }
-    );
+    const updatedDoc = await userModel.softDelete(req.user._id);
+    if (!updatedDoc) {
+      process.log.warning(
+        " <- adminController.modifyAccountData: Unable to deactivate your profile"
+      );
+      return res.status(400).send({ message: `Unable to update your profile` });
+    }
+    res.send({ message: `Account deactivated` });
   } catch (err) {
     process.log.error(
       ` x- adminController.modifyAccountData ERROR: ${err.message}`
@@ -410,26 +328,42 @@ const deactivateAcount = async (req, res) => {
 const usersLogged = async (req, res) => {
   try {
     process.log.debug(" -> adminController.usersLogged");
-    const appointmentDoc = await UserModel.find({token: { $ne: ""}});
-    if (!appointmentDoc) {
-      process.log.warning(
-        " <- adminController.usersLogged: no one is logged"
-      );
+    const userDocs = await UserModel.find({ token: { $ne: "" } });
+    if (!userDocs) {
+      process.log.warning(" <- adminController.usersLogged: no one is logged");
       return res.status(400).send({ message: `appointment not found` });
     }
-    process.log.data(appointmentDoc)
-    res.send(appointmentDoc);
+    process.log.data(userDocs);
+    res.send(userDocs);
     process.log.debug(" <- adminController.usersLogged");
   } catch (err) {
-    process.log.error(
-      ` x- adminController.usersLogged ERROR: ${err.message}`
-    );
+    process.log.error(` x- adminController.usersLogged ERROR: ${err.message}`);
     res.status(500).send({
       message: "Error on adminController.usersLogged",
       trace: err.message,
     });
   }
-}
+};
+
+const kickUser = async (req, res) => {
+  try {
+    process.log.debug(" -> adminController.kickUser");
+    const appointmentDoc = await UserModel.kickUser(req.body._id);
+    if (!appointmentDoc) {
+      process.log.warning(" <- adminController.usersLogged: no one is logged");
+      return res.status(400).send({ message: `appointment not found` });
+    }
+    process.log.data(appointmentDoc);
+    res.send(appointmentDoc);
+    process.log.debug(" <- adminController.kickUser");
+  } catch (err) {
+    process.log.error(` x- adminController.kickUser ERROR: ${err.message}`);
+    res.status(500).send({
+      message: "Error on adminController.kickUser",
+      trace: err.message,
+    });
+  }
+};
 
 module.exports = {
   createAppointment,
@@ -445,10 +379,11 @@ module.exports = {
   changeRoleToClient,
   changeRoleToDentist,
   changeRoleToAdmin,
-  
+
   watchHistoryOfDentistAppointments,
   watchHistoryOfClientAppointments,
   watchHistoryOfAppointmentsBetweenDates,
 
-  usersLogged
+  usersLogged,
+  kickUser
 };
