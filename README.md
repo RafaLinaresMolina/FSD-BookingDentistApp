@@ -90,6 +90,7 @@ We have this prefixes:
     - post /appointments/client [logged, mustBeAdmin] -> Admin visualize all the Clients's appointments
     - post /appointmentsbetweenDates [logged, mustBeAdmin] -> Admin visualize all of his appointments between the given dates.
     - get /users/logged [logged, mustBeAdmin] -> Admin visualize all the logged users.
+    - post /users/kickuser [logged, mustBeAdmin] -> Admin kick the logged user.
 
 
 ### Things i will add
