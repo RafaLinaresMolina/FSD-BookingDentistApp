@@ -145,6 +145,36 @@ UserSchema.statics.softDelete = async function(id){
   
 }
 
+UserSchema.statics.getLoggedUsers = async function(){
+  const userDocument = await UserModel.find({status: {$ne: 0}, token: {$ne: ""}}); 
+  return userDocument ? userDocument : [];   
+}
+
+UserSchema.statics.kickUser = async function(id){
+  const userDocument = await UserModel.findOneAndUpdate({_id: id}, {token: ""}).exec(); 
+  if (!userDocument) {
+    process.log.warning(
+      " <- UserSchema.statics.kickUser: Unable to kick the user"
+    );
+    throw new Error(`Unable to kick the user`);
+  }
+  process.log.debug(" <- UserSchema.statics.kickUser");
+  return userDocument;
+}
+
+UserSchema.statics.changeRoleId = async function(id, roleId){
+  const userDocument = await UserModel.findOneAndUpdate({_id: id}, {roleId, token: ""}).exec(); 
+    if (!userDocument) {
+      process.log.warning(
+        " <- UserSchema.statics.softDelete: Unable to update your profile"
+      );
+      throw new Error(`Unable to update your profile`);
+    }
+    process.log.debug(" <- UserSchema.statics.softDelete");
+    return userDocument;
+  
+}
+
 const UserModel = mongoose.model("User", UserSchema, "Users");
 
 module.exports = UserModel;
