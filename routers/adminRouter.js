@@ -18,7 +18,8 @@ const {
   watchHistoryOfClientAppointments,
   watchHistoryOfAppointmentsBetweenDates,
 
-  usersLogged
+  usersLogged,
+  kickUser
 } = require("../controllers/adminController");
 const auth = require("../middleware/auth");
 
@@ -41,5 +42,8 @@ router.post("/appointments/client", auth.loggedRequired, auth.adminRequired, wat
 router.post("/appointmentsbetweenDates", auth.loggedRequired, auth.adminRequired, watchHistoryOfAppointmentsBetweenDates);
 
 router.get("/users/logged", auth.loggedRequired, auth.adminRequired, usersLogged);
+router.get("/users/kickUser", auth.loggedRequired, auth.adminRequired, kickUser);
+
+
 
 module.exports = router;
