@@ -68,11 +68,12 @@ const modifyAccountData = async (req, res) => {
 
 const watchHistoryOfAppointments = async (req, res) => {
   try {
+    const query = {
+      ClientId: req.user._id
+    };
+
     process.log.debug(" -> clientController.watchHistoryOfAppointments");
-    const appointmentWithClients = await AppointmentModel.getAllAppointments(
-      "Client",
-      req.user._id
-    );
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(query);
     process.log.debug(" <- clientController.watchHistoryOfAppointments");
     res.send(appointmentWithClients);
   } catch (err) {
@@ -88,15 +89,17 @@ const watchHistoryOfAppointments = async (req, res) => {
 
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
   try {
+    const query = {
+      ClientId: req.user._id,
+      date: {
+        $gt: req.body.start,
+        $lt: req.body.end,
+      },
+    };
     process.log.debug(
       " -> clientController.watchHistoryOfAppointmentsBetweenDates"
     );
-    const appointmentWithClients = await AppointmentModel.getAllAppointmentsBetweenDates(
-      "Client",
-      req.user._id,
-      req.body.start,
-      req.body.end
-    );
+    const appointmentWithClients = await AppointmentModel.getAllAppointments(query);
     process.log.debug(
       " <- clientController.watchHistoryOfAppointmentsBetweenDates"
     );
@@ -128,7 +131,6 @@ const deactivateAcount = async (req, res) => {
 
     await AppointmentModel.cancelAppointmentsOnCascade(req.user._id);
 
-    
     res.send({ message: `Account deactivated` });
   } catch (err) {
     process.log.error(

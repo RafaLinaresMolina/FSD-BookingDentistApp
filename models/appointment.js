@@ -104,41 +104,12 @@ AppointmentSchema.statics.confirmAppointment = async function (id) {
   }
 };
 
-AppointmentSchema.statics.getAllAppointments = async function (userType, id) {
+AppointmentSchema.statics.getAllAppointments = async function (query) {
   try {
-    const appointmentDocs = await this.find({ [userType + "Id"]: id });
+    const appointmentDocs = await this.find(query);
     if (!appointmentDocs) {
       process.log.warning(
         " <- AppointmentSchema.statics.getAllAppointments: Unable to retrive the appointments"
-      );
-      return res
-        .status(400)
-        .send({ message: `Unable to retrive the appointments` });
-    }
-
-    return appointmentDocs;
-  } catch (err) {
-    throw err;
-  }
-};
-
-AppointmentSchema.statics.getAllAppointmentsBetweenDates = async function (
-  userType,
-  id,
-  start,
-  end
-) {
-  try {
-    const appointmentDocs = await this.find({
-      [userType + "Id"]: id,
-      date: {
-        $gt: start,
-        $lt: end,
-      },
-    });
-    if (!appointmentDocs) {
-      process.log.warning(
-        " <- AppointmentSchema.statics.getAllAppointmentsBetweenDates: Unable to retrive the appointments"
       );
       return res
         .status(400)
@@ -156,7 +127,7 @@ AppointmentSchema.statics.cancelAppointmentsOnCascade = async function (
   id
 ) {
   await this.updateMany(
-    { [collection+'Id']: id, status: { $ne: 3 } },
+    { [collection + "Id"]: id, status: { $ne: 3 } },
     { $set: { status: 0 } },
     { multi: true },
     (err, updatedDocuments) => {
