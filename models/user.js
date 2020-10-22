@@ -79,6 +79,22 @@ UserSchema.statics.getUserById = async function (id) {
   }
 };
 
+UserSchema.statics.findUserByToken = async function (token) {
+  try {
+    process.log.debug(" -> UserSchema.statics.findUserByToken");
+    const userDoc = await UserModel.findOne({ token: token });
+    if (!userDoc) {
+      process.log.warning(" <- UserSchema.statics.findUserByToken");
+      throw new Error(`User not found`);
+    }
+    process.log.debug(" <- UserSchema.statics.findUserByToken");
+    return userDoc;
+  } catch (err) {
+    process.log.error(` x- UserSchema.statics.findUserByToken: ${err.message}`);
+    throw err;
+  }
+};
+
 UserSchema.statics.logout = async function (token) {
   try {
     const user = await this.findOne({ token: token });
