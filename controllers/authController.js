@@ -45,6 +45,28 @@ const login = async (req, res) => {
   }
 };
 
+const getUserData = async (req, res) => {
+  try {
+    process.log.debug(" -> authController.getUserData");
+    process.log.data(req.body);
+
+    const user = await UserModel.findUserByToken(req.user.token);
+
+    await tools.isValidPassword(req.body.password, user.toObject().password)
+    
+    const token = tools.generateToken({ _id: user._id, rolId: user.rolId });
+    user.token = token;
+    await user.save();
+    res.send({ token: token });
+    process.log.debug(" <- authController.getUserData");
+  } catch (err) {
+    process.log.error(` x- authController.getUserData ERROR: ${err.message}`);
+    res
+      .status(500)
+      .send({ message: "Error on authController.getUserData", trace: err.message });
+  }
+};
+
 const logout = async (req, res) => {
   try {
     process.log.debug(" -> authController.logout");
@@ -72,4 +94,5 @@ module.exports = {
   register,
   login,
   logout,
+  getUserData,
 };
