@@ -27,10 +27,10 @@ const createAppointment = async (req, res) => {
 const cancelAppointment = async (req, res) => {
   try {
     process.log.debug(" -> clientController.cancelAppointment");
-    process.log.data(req.body);
+    process.log.data(req.params);
 
     const appointmentDoc = await AppointmentModel.cancelAppointment(
-      req.body._id
+      req.params._id
     );
 
     res.send({ message: `${appointmentDoc.title} is cancelled.` });

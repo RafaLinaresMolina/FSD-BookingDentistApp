@@ -270,6 +270,30 @@ const watchHistoryOfClientAppointments = async (req, res) => {
   }
 };
 
+const watchHistoryOfAppointments = async (req, res) => {
+  try {
+
+    process.log.debug(
+      " -> adminController.watchHistoryOfAppointments"
+    );
+    const appointmentWithClients = await AppointmentModel.find();
+    process.log.debug(
+      " <- adminController.watchHistoryOfAppointments"
+    );
+    res.send(appointmentWithClients);
+  } catch (err) {
+    process.log.error(
+      " x- adminController.watchHistoryOfAppointments Error:" +
+        err.message
+    );
+    res.status(400).send({
+      message:
+        "Error on adminController.watchHistoryOfAppointments",
+      trace: err.message,
+    });
+  }
+};
+
 const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
   try {
     const query = {
@@ -300,6 +324,7 @@ const watchHistoryOfAppointmentsBetweenDates = async (req, res) => {
     });
   }
 };
+
 
 const deactivateAcount = async (req, res) => {
   try {
@@ -380,6 +405,7 @@ module.exports = {
   changeRoleToDentist,
   changeRoleToAdmin,
 
+  watchHistoryOfAppointments,
   watchHistoryOfDentistAppointments,
   watchHistoryOfClientAppointments,
   watchHistoryOfAppointmentsBetweenDates,
