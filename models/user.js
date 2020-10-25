@@ -1,9 +1,12 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const tools = require("../lib/tools");
 
 const UserSchema = mongoose.Schema({
+  status: { type: Number, required: true, default: 1 },
+  name: { type: String, required: true },
+  lastName: { type: String, required: true },
+  address: { type: String, required: false },
   token: {
     type: String,
     default: "",
@@ -42,12 +45,6 @@ const UserSchema = mongoose.Schema({
     default: 1,
     required: true,
   },
-});
-
-UserSchema.pre("save", async function (next) {
-  const user = this;
-  user.password = await bcrypt.hash(user.password, 9);
-  next();
 });
 
 UserSchema.statics.checkCredentials = async function (credentials) {
@@ -99,10 +96,12 @@ UserSchema.statics.logout = async function (token) {
   try {
     const user = await this.findOne({ token: token });
     if (!user) {
-      process.log.warning(` <- authController.logout: User already not logged.`);
+      process.log.warning(
+        ` <- authController.logout: User already not logged.`
+      );
       throw new Error("User already not logged.");
     }
-    user.token = null;
+    user.token = "";
     await user.save();
   } catch (err) {
     throw err;
@@ -129,45 +128,59 @@ UserSchema.statics.getAllLoggedUsers = async function () {
 
 UserSchema.methods.generateAuthToken = function () {
   const user = this;
-  const token = jwt.sign({ _id: user._id, roleId: user.roleId }, process.env.SECRET_AUTH_JWT, {
-    expiresIn: "30d",
-  });
+  const token = jwt.sign(
+    { _id: user._id, roleId: user.roleId },
+    process.env.SECRET_AUTH_JWT,
+    {
+      expiresIn: "30d",
+    }
+  );
   return token;
 };
 
-UserSchema.statics.update = async function(id, data){
-  const userDocument = await UserModel.findOneAndUpdate({_id: id}, data).exec(); 
-    if (!userDocument) {
-      process.log.warning(
-        " <- UserSchema.statics.update: Unable to update your profile"
-      );
-      throw new Error(`Unable to update your profile`);
-    }
-    process.log.debug(" <- UserSchema.statics.update");
-    return userDocument;
-  
-}
+UserSchema.statics.update = async function (id, data) {
+  const userDocument = await UserModel.findOneAndUpdate(
+    { _id: id },
+    data
+  ).exec();
+  if (!userDocument) {
+    process.log.warning(
+      " <- UserSchema.statics.update: Unable to update your profile"
+    );
+    throw new Error(`Unable to update your profile`);
+  }
+  process.log.debug(" <- UserSchema.statics.update");
+  return userDocument;
+};
 
-UserSchema.statics.softDelete = async function(id){
-  const userDocument = await UserModel.findOneAndUpdate({_id: id}, {status: 0, token: ""}).exec(); 
-    if (!userDocument) {
-      process.log.warning(
-        " <- UserSchema.statics.softDelete: Unable to update your profile"
-      );
-      throw new Error(`Unable to update your profile`);
-    }
-    process.log.debug(" <- UserSchema.statics.softDelete");
-    return userDocument;
-  
-}
+UserSchema.statics.softDelete = async function (id) {
+  const userDocument = await UserModel.findOneAndUpdate(
+    { _id: id },
+    { status: 0, token: "" }
+  ).exec();
+  if (!userDocument) {
+    process.log.warning(
+      " <- UserSchema.statics.softDelete: Unable to update your profile"
+    );
+    throw new Error(`Unable to update your profile`);
+  }
+  process.log.debug(" <- UserSchema.statics.softDelete");
+  return userDocument;
+};
 
-UserSchema.statics.getLoggedUsers = async function(){
-  const userDocument = await UserModel.find({status: {$ne: 0}, token: {$ne: ""}}); 
-  return userDocument ? userDocument : [];   
-}
+UserSchema.statics.getLoggedUsers = async function () {
+  const userDocument = await UserModel.find({
+    status: { $ne: 0 },
+    token: { $ne: "" },
+  });
+  return userDocument ? userDocument : [];
+};
 
-UserSchema.statics.kickUser = async function(id){
-  const userDocument = await UserModel.findOneAndUpdate({_id: id}, {token: ""}).exec(); 
+UserSchema.statics.kickUser = async function (id) {
+  const userDocument = await UserModel.findOneAndUpdate(
+    { _id: id },
+    { token: "" }
+  ).exec();
   if (!userDocument) {
     process.log.warning(
       " <- UserSchema.statics.kickUser: Unable to kick the user"
@@ -176,20 +189,22 @@ UserSchema.statics.kickUser = async function(id){
   }
   process.log.debug(" <- UserSchema.statics.kickUser");
   return userDocument;
-}
+};
 
-UserSchema.statics.changeRoleId = async function(id, roleId){
-  const userDocument = await UserModel.findOneAndUpdate({_id: id}, {roleId, token: ""}).exec(); 
-    if (!userDocument) {
-      process.log.warning(
-        " <- UserSchema.statics.softDelete: Unable to update your profile"
-      );
-      throw new Error(`Unable to update your profile`);
-    }
-    process.log.debug(" <- UserSchema.statics.softDelete");
-    return userDocument;
-  
-}
+UserSchema.statics.changeRoleId = async function (id, roleId) {
+  const userDocument = await UserModel.findOneAndUpdate(
+    { _id: id },
+    { roleId, token: "" }
+  ).exec();
+  if (!userDocument) {
+    process.log.warning(
+      " <- UserSchema.statics.softDelete: Unable to update your profile"
+    );
+    throw new Error(`Unable to update your profile`);
+  }
+  process.log.debug(" <- UserSchema.statics.softDelete");
+  return userDocument;
+};
 
 const UserModel = mongoose.model("User", UserSchema, "Users");
 
