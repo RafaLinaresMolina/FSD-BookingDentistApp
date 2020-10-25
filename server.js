@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const MongoConnection = require("./lib/MongoConnection");
 const app = express();
+const cors = require("./middleware/cors");
 const PORT = process.env.PORT || 5500;
 const Log = require("./lib/logger");
 const authControler = require('./routers/autRouter');
@@ -37,6 +38,7 @@ const initLogger = async () => {
  * This method initialize and execute the express API REST Service
  */
 const initExpress = () => {
+  app.use(cors);
   app.use(express.json());
   app.use('/auth',authControler);
   app.use('/client',clientControler);

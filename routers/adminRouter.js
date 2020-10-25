@@ -14,6 +14,7 @@ const {
   changeRoleToDentist,
   changeRoleToAdmin,
   
+  watchHistoryOfAppointments,
   watchHistoryOfDentistAppointments,
   watchHistoryOfClientAppointments,
   watchHistoryOfAppointmentsBetweenDates,
@@ -37,6 +38,7 @@ router.put("/roles/client", auth.loggedRequired, auth.adminRequired, changeRoleT
 router.put("/roles/dentist", auth.loggedRequired, auth.adminRequired, changeRoleToDentist);
 router.put("/roles/admin", auth.loggedRequired, auth.adminRequired, changeRoleToAdmin);
 
+router.get("/appointments", auth.loggedRequired, auth.adminRequired, watchHistoryOfAppointments);
 router.post("/appointments/dentist", auth.loggedRequired, auth.adminRequired, watchHistoryOfDentistAppointments);
 router.post("/appointments/client", auth.loggedRequired, auth.adminRequired, watchHistoryOfClientAppointments);
 router.post("/appointmentsbetweenDates", auth.loggedRequired, auth.adminRequired, watchHistoryOfAppointmentsBetweenDates);

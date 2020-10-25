@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const UserModel = require("../models/user");
 const tools = require('../lib/tools');
+const bcrypt = require('bcryptjs');
 
 const register = async (req, res) => {
   try {
@@ -11,6 +12,7 @@ const register = async (req, res) => {
       UserModel.schema,
       'Users'
     );
+    req.body.password = await bcrypt.hash(req.body.password, 9);
     const clientDoc = new User(req.body);
     await clientDoc.save();
     res.send(clientDoc);
@@ -30,8 +32,13 @@ const login = async (req, res) => {
 
     const user = await UserModel.checkCredentials(req.body);
     console.log(user)
-    await tools.isValidPassword(req.body.password, user.toObject().password)
     
+    const isPassOk = await tools.isValidPassword(req.body.password, user.toObject().password)
+    console.log(isPassOk, req.body.password, user.toObject().password)
+    if(!isPassOk){
+      process.log.debug(" <- authController.getUserData");
+      return res.status(400).send({message: 'Error', trace: "Wrong credentials"})
+    }
     const token = tools.generateToken({ _id: user._id, rolId: user.rolId });
     user.token = token;
     await user.save();
@@ -52,12 +59,7 @@ const getUserData = async (req, res) => {
 
     const user = await UserModel.findUserByToken(req.user.token);
 
-    await tools.isValidPassword(req.body.password, user.toObject().password)
-    
-    const token = tools.generateToken({ _id: user._id, rolId: user.rolId });
-    user.token = token;
-    await user.save();
-    res.send({ token: token });
+    res.send({ name: user.name, lastName: user.lastName, roleId:user.roleId, email: user.email, address: user.address });
     process.log.debug(" <- authController.getUserData");
   } catch (err) {
     process.log.error(` x- authController.getUserData ERROR: ${err.message}`);
