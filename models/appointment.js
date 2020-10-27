@@ -23,7 +23,7 @@ const AppointmentSchema = mongoose.Schema({
     required: true,
   },
   status: {
-    type: String,
+    type: Number,
     enum: [1, 2, 3, 0],
     default: 1,
   },
